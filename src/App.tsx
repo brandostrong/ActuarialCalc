@@ -12,7 +12,7 @@ function App() {
     <div className="min-h-screen bg-gray-50">
       <header className="bg-primary-700 text-white shadow-md">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold">SOA Exam FM Study Tools</h1>
+          <h1 className="text-3xl font-bold">ActuarialCalc</h1>
           <p className="mt-2 text-primary-100">Financial Mathematics Calculators</p>
         </div>
       </header>
@@ -59,7 +59,7 @@ function App() {
       <footer className="bg-gray-800 text-white mt-12">
         <div className="container mx-auto px-4 py-6">
           <p className="text-center text-gray-400">
-            SOA Exam FM Study Tools - Financial Mathematics Calculators
+            ActuarialCalc - Financial Mathematics Calculators
           </p>
         </div>
       </footer>
