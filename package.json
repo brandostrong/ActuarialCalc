@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "eslint src --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "predeploy": "npm run build",
+    "deploy": "gh-pages -d dist"
   },
   "keywords": [
     "actuarial",
@@ -35,6 +37,7 @@
     "vite": "^6.2.0"
   },
   "devDependencies": {
-    "@types/react-katex": "^3.0.4"
+    "@types/react-katex": "^3.0.4",
+    "gh-pages": "^6.3.0"
   }
 }

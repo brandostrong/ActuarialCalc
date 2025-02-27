@@ -4,11 +4,26 @@ A comprehensive web application featuring financial mathematics calculators desi
 
 ![ActuarialCalc](https://via.placeholder.com/800x400?text=ActuarialCalc+Screenshot)
 
+## Live Demo
+
+Visit the live application: [ActuarialCalc](https://brandostrong.github.io/ActuarialCalc/)
+
 ## Overview
 
 ActuarialCalc provides interactive calculators for various financial mathematics concepts covered in the SOA Exam FM. The application allows users to perform complex actuarial calculations with ease, visualize payment schedules, and understand the underlying formulas.
 
 ## Features
+
+### Interest Rate Calculator
+- Convert between different interest rate types:
+  - Effective annual rate (i)
+  - Nominal annual rate with various compounding frequencies (i^(m))
+  - Force of interest (continuous compounding) (δ)
+  - Discount rate (d)
+  - Simple interest
+- Display all equivalent rates with proper mathematical notation
+- Calculate time value of money (future value and present value)
+- Comprehensive formula references with explanations
 
 ### Annuity Calculator
 - Calculate present value, future value, payment amount, interest rate, or number of periods
@@ -29,6 +44,15 @@ ActuarialCalc provides interactive calculators for various financial mathematics
 - Perpetuity Calculator
 - Additional financial mathematics tools
 
+## Recent Updates
+
+### Mathematical Notation Improvements
+- Added proper mathematical notation for interest rates throughout the application
+- Implemented superscript formatting for rate notation (e.g., i^(12) for monthly compounding)
+- Enhanced display of conversion results with clear rate notation
+- Updated dropdowns to include rate notation for better clarity
+- Improved formula displays with proper mathematical symbols
+
 ## Technologies Used
 
 - **Frontend**: React, TypeScript
@@ -47,8 +71,8 @@ ActuarialCalc provides interactive calculators for various financial mathematics
 
 1. Clone the repository
    ```bash
-   git clone https://github.com/yourusername/actuarial-study-site.git
-   cd actuarial-study-site
+   git clone https://github.com/brandostrong/ActuarialCalc.git
+   cd ActuarialCalc
    ```
 
 2. Install dependencies
@@ -77,10 +101,23 @@ yarn build
 
 The built files will be in the `dist` directory and can be deployed to any static hosting service.
 
+## Deploying to GitHub Pages
+
+This project can be easily deployed to GitHub Pages. For detailed instructions, see the [GitHub Pages Deployment Guide](./github-pages-deployment.md).
+
+In summary, you'll need to:
+
+1. Install the `gh-pages` package: `npm install gh-pages --save-dev`
+2. Update `vite.config.ts` to set the base path to your repository name
+3. Add deployment scripts to `package.json`
+4. Run `npm run deploy` to publish to GitHub Pages
+
+Your site will be available at `https://[your-github-username].github.io/ActuarialCalc/`
+
 ## Project Structure
 
 ```
-actuarial-study-site/
+ActuarialCalc/
 ├── public/                  # Static assets
 │   └── calculator-icon.svg  # Site favicon
 ├── src/                     # Source code
@@ -88,10 +125,12 @@ actuarial-study-site/
 │   │   ├── AmortizationTable.tsx     # Displays payment schedules
 │   │   ├── AnnuityCalculator.tsx     # Main annuity calculator component
 │   │   ├── FormulaTooltip.tsx        # Tooltip component for formulas
+│   │   ├── InterestRateCalculator.tsx # Interest rate conversion calculator
 │   │   └── PerpetuityCalculator.tsx  # Perpetuity calculator (coming soon)
 │   ├── utils/               # Utility functions and types
-│   │   ├── annuityCalculations.ts    # Core calculation functions
+│   │   ├── annuityCalculations.ts    # Core annuity calculation functions
 │   │   ├── formulaTooltips.ts        # Formula explanations
+│   │   ├── interestRateCalculations.ts # Interest rate conversion functions
 │   │   └── types.ts                  # TypeScript type definitions
 │   ├── App.tsx              # Main application component
 │   ├── index.css            # Global styles
@@ -104,6 +143,16 @@ actuarial-study-site/
 ```
 
 ## Usage
+
+### Interest Rate Calculator
+
+1. Enter your interest rate
+2. Select the source rate type (effective, nominal, force of interest, etc.)
+3. If applicable, choose the compounding frequency
+4. Select the target rate type you want to convert to
+5. Click "Calculate" to see the conversion result
+6. View all equivalent rates by clicking "Show All Equivalent Rates"
+7. Calculate time value of money by clicking "Show Time Value Calculations"
 
 ### Annuity Calculator
 
@@ -127,9 +176,9 @@ The application includes a comprehensive set of formula references with explanat
 The application implements various financial mathematics concepts including:
 
 - Time value of money
+- Interest rate conversions and equivalencies
 - Annuities (immediate, due, deferred)
 - Increasing and geometric payment patterns
-- Interest rate conversions
 - Amortization schedules
 
 ## Contributing

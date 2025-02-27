@@ -15,7 +15,8 @@ const AmortizationTable: React.FC<AmortizationTableProps> = ({ schedule }) => {
   // Calculate totals
   const totalPayments = schedule.reduce((sum, entry) => sum + entry.payment, 0);
   const totalInterest = schedule.reduce((sum, entry) => sum + entry.interestPayment, 0);
-  const totalPrincipal = schedule.reduce((sum, entry) => sum + entry.principalPayment, 0);
+  // We'll use totalPrincipal in a future enhancement
+  // const totalPrincipal = schedule.reduce((sum, entry) => sum + entry.principalPayment, 0);
   
   // Determine if payments are level, increasing, or geometric
   const isLevelPayment = schedule.every((entry, i, arr) =>

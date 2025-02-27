@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import AnnuityCalculator from './components/AnnuityCalculator';
 import PerpetuityCalculator from './components/PerpetuityCalculator';
+import InterestRateCalculator from './components/InterestRateCalculator';
 
 function App() {
-  const [activeCalculator, setActiveCalculator] = useState<'annuity' | 'perpetuity'>('annuity');
+  const [activeCalculator, setActiveCalculator] = useState<'interestRate' | 'annuity' | 'perpetuity'>('annuity');
   
-  const handleCalculatorChange = (calculator: 'annuity' | 'perpetuity') => {
+  const handleCalculatorChange = (calculator: 'interestRate' | 'annuity' | 'perpetuity') => {
     setActiveCalculator(calculator);
   };
   return (
@@ -20,6 +21,12 @@ function App() {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8">
           <nav className="flex border-b border-gray-200">
+            <button
+              className={`py-4 px-6 font-medium text-lg ${activeCalculator === 'interestRate' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => handleCalculatorChange('interestRate')}
+            >
+              Interest Rate Calculator
+            </button>
             <button
               className={`py-4 px-6 font-medium text-lg ${activeCalculator === 'annuity' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
               onClick={() => handleCalculatorChange('annuity')}
@@ -36,6 +43,15 @@ function App() {
         </div>
         
         <div className="grid grid-cols-1 gap-8">
+          {activeCalculator === 'interestRate' && (
+            <section>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Interest Rate Calculator</h2>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <InterestRateCalculator />
+              </div>
+            </section>
+          )}
+          
           {activeCalculator === 'annuity' && (
             <section>
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Annuity Calculator</h2>

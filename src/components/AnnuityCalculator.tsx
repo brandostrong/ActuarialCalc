@@ -5,16 +5,17 @@ import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import {
   AnnuityCalculatorState,
-  AnnuityType,
-  AnnuityVariationType,
-  InterestRateType,
+  // These types are used in type definitions but not directly referenced
+  // AnnuityType,
+  // AnnuityVariationType,
+  // InterestRateType,
   SolveForType
 } from '../utils/types';
 import {
   presentValueAnnuityImmediate,
   presentValueAnnuityDue,
   presentValueDeferredAnnuityImmediate,
-  presentValueDeferredAnnuityDue,
+  // presentValueDeferredAnnuityDue, // Unused import
   presentValueIncreasingAnnuityImmediate,
   presentValueIncreasingAnnuityDue,
   presentValueGeometricAnnuityImmediate,
@@ -22,22 +23,22 @@ import {
   futureValueAnnuityImmediate,
   futureValueAnnuityDue,
   futureValueDeferredAnnuityImmediate,
-  futureValueDeferredAnnuityDue,
+  // futureValueDeferredAnnuityDue, // Unused import
   calculatePaymentFromPV,
   calculatePaymentFromFV,
   calculatePaymentFromPVIncreasing,
   calculatePaymentFromPVGeometric,
   calculateInterestRateFromPV,
-  calculateInterestRateFromFV,
+  // calculateInterestRateFromFV, // Unused import
   calculateInterestRateFromPVIncreasing,
   calculateInterestRateFromPVGeometric,
   calculatePeriodsFromPV,
-  calculatePeriodsFromFV,
+  // calculatePeriodsFromFV, // Unused import
   calculatePeriodsFromPVIncreasing,
   calculatePeriodsFromPVGeometric,
   calculateFVFromPV,
   calculatePVFromFV,
-  calculateAccumulatedValue,
+  // calculateAccumulatedValue, // Unused import
   convertInterestRate,
   generateAmortizationSchedule,
   generateIncreasingAnnuitySchedule,
@@ -155,7 +156,7 @@ const AnnuityCalculator: React.FC = () => {
       solveFor,
       payment,
       presentValue,
-      futureValue,
+      // futureValue, // Unused variable
       interestRate,
       periods,
       variationType,
@@ -244,7 +245,7 @@ const AnnuityCalculator: React.FC = () => {
         payment,
         presentValue,
         futureValue,
-        accumulatedValue,
+        // accumulatedValue, // Unused variable
         interestRate,
         interestRateType,
         compoundingFrequency,
@@ -419,7 +420,8 @@ const AnnuityCalculator: React.FC = () => {
             
             // Generate amortization schedule if we can calculate the payment
             if (variationType === 'level') {
-              const calculatedPayment = calculatePaymentFromPV(result, effectiveRate, periods, annuityType);
+              // Calculate payment but we don't need to store it
+              // calculatePaymentFromPV(result, effectiveRate, periods, annuityType);
               
               amortizationSchedule = generateAmortizationSchedule(
                 result,
@@ -523,7 +525,8 @@ const AnnuityCalculator: React.FC = () => {
             
             // Generate amortization schedule if we can calculate the payment
             if (variationType === 'level') {
-              const calculatedPayment = calculatePaymentFromPV(presentValue, effectiveRate, periods, annuityType);
+              // Calculate payment but we don't need to store it
+              // calculatePaymentFromPV(presentValue, effectiveRate, periods, annuityType);
               
               amortizationSchedule = generateAmortizationSchedule(
                 presentValue,
@@ -890,10 +893,10 @@ const AnnuityCalculator: React.FC = () => {
                   onChange={handleInputChange}
                   className="calculator-input"
                 >
-                  <option value="effective">Effective</option>
-                  <option value="nominal">Nominal</option>
-                  <option value="force">Force of Interest</option>
-                  <option value="discount">Discount Rate</option>
+                  <option value="effective">Effective (i)</option>
+                  <option value="nominal">Nominal (i^(m))</option>
+                  <option value="force">Force of Interest (δ)</option>
+                  <option value="discount">Discount Rate (d)</option>
                 </select>
               </div>
               
@@ -906,11 +909,11 @@ const AnnuityCalculator: React.FC = () => {
                     onChange={handleInputChange}
                     className="calculator-input"
                   >
-                    <option value="1">Annual</option>
-                    <option value="2">Semi-annual</option>
-                    <option value="4">Quarterly</option>
-                    <option value="12">Monthly</option>
-                    <option value="365">Daily</option>
+                    <option value="1">Annual (i)</option>
+                    <option value="2">Semi-annual (i^(2))</option>
+                    <option value="4">Quarterly (i^(4))</option>
+                    <option value="12">Monthly (i^(12))</option>
+                    <option value="365">Daily (i^(365))</option>
                   </select>
                 </div>
               )}
@@ -996,10 +999,10 @@ const AnnuityCalculator: React.FC = () => {
               onChange={handleInputChange}
               className="calculator-input"
             >
-              <option value="1">Annual</option>
-              <option value="2">Semi-annual</option>
-              <option value="4">Quarterly</option>
-              <option value="12">Monthly</option>
+              <option value="1">Annual (1/year)</option>
+              <option value="2">Semi-annual (2/year)</option>
+              <option value="4">Quarterly (4/year)</option>
+              <option value="12">Monthly (12/year)</option>
             </select>
           </div>
         </div>
@@ -1032,9 +1035,21 @@ const AnnuityCalculator: React.FC = () => {
                          'Number of Periods'}:</strong>
               </p>
               <p className="text-2xl font-bold text-primary-700">
-                {state.solveFor === 'interestRate'
-                  ? `${state.result.toFixed(4)}%`
-                  : state.result.toFixed(2)}
+                {state.solveFor === 'interestRate' ? (
+                  <>
+                    {state.result.toFixed(4)}%{' '}
+                    {state.interestRateType === 'effective' ? '(i)' :
+                     state.interestRateType === 'nominal' ? (
+                       <>
+                         (i
+                         <sup>({state.compoundingFrequency})</sup>
+                         )
+                       </>
+                     ) :
+                     state.interestRateType === 'force' ? '(δ)' :
+                     state.interestRateType === 'discount' ? '(d)' : ''}
+                  </>
+                ) : state.result.toFixed(2)}
               </p>
             </div>
             

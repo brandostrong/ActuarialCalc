@@ -2,7 +2,8 @@ import { create, all } from 'mathjs';
 import { InterestRateType, AnnuityType } from './types';
 
 // Create a math.js instance with all functions
-const math = create(all);
+// We're not using math directly but creating it for potential future use
+const _math = create(all); // Renamed to _math to indicate it's intentionally unused
 
 // Interest rate conversion functions
 export const convertInterestRate = (
@@ -132,7 +133,7 @@ export const futureValueDeferredAnnuityImmediate = (
   payment: number,
   interestRate: number,
   periods: number,
-  deferredPeriods: number
+  _deferredPeriods: number // Renamed to _deferredPeriods to indicate it's intentionally unused
 ): number => {
   const i = interestRate / 100;
   if (i === 0) return payment * periods;
@@ -149,7 +150,7 @@ export const futureValueDeferredAnnuityDue = (
   payment: number,
   interestRate: number,
   periods: number,
-  deferredPeriods: number
+  _deferredPeriods: number // Renamed to _deferredPeriods to indicate it's intentionally unused
 ): number => {
   const i = interestRate / 100;
   if (i === 0) return payment * periods;
@@ -721,7 +722,7 @@ export const calculateAccumulatedValue = (
   periods: number,
   annuityType: AnnuityType = 'immediate'
 ): number => {
-  const i = interestRate / 100;
+  // const i = interestRate / 100; // Unused variable
   
   // Future value of the present value
   const pvFutureValue = calculateFVFromPV(presentValue, interestRate, periods);

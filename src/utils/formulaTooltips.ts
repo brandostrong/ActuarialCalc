@@ -1,5 +1,34 @@
 // Tooltip explanations for financial mathematics formulas
 export const formulaTooltips = {
+  // Interest rate formulas
+  effectiveRate: {
+    formula: "i = \\left(1 + \\frac{i^{(m)}}{m}\\right)^m - 1",
+    explanation: "Converting a nominal rate i^{(m)} compounded m times per year to an effective annual rate i. This is the standard formula for finding the equivalent effective annual rate."
+  },
+  nominalRate: {
+    formula: "i^{(m)} = m \\cdot \\left[(1 + i)^{1/m} - 1\\right]",
+    explanation: "Converting an effective annual rate i to a nominal rate i^{(m)} compounded m times per year. This gives the equivalent nominal rate that would produce the same accumulated value over one year."
+  },
+  forceOfInterest: {
+    formula: "\\delta = \\ln(1 + i)",
+    explanation: "Force of interest (δ) is the continuous compounding equivalent of an effective interest rate i. It represents the instantaneous rate of interest at any point in time."
+  },
+  discountRate: {
+    formula: "d = \\frac{i}{1 + i}",
+    explanation: "Discount rate (d) is related to the effective interest rate (i). It represents the amount of discount as a proportion of the accumulated value."
+  },
+  accumulationFunction: {
+    formula: "a(t) = (1 + i)^t",
+    explanation: "The accumulation function gives the value at time t of 1 unit invested at time 0, accumulating at effective interest rate i."
+  },
+  simpleInterest: {
+    formula: "a(t) = 1 + i \\cdot t",
+    explanation: "Under simple interest, interest is calculated only on the initial principal and not on accumulated interest. The rate i is applied linearly with time."
+  },
+  allInOneRelationship: {
+    formula: "(1 + i)^t = \\left(\\frac{1}{1-d}\\right)^t = e^{\\delta t}",
+    explanation: "This formula shows the relationship between the effective interest rate i, the discount rate d, and the force of interest δ. All three expressions give the same accumulation factor over time t."
+  },
   // Basic annuity formulas
   presentValueAnnuityImmediate: {
     formula: "a_{n|i} = (1 - v^n)/i where v = 1/(1+i)",
@@ -46,18 +75,14 @@ export const formulaTooltips = {
     explanation: "Present value of a geometrically increasing annuity due where payments increase at a rate g each period and payments occur at the beginning of each period."
   },
   
-  // Interest rate conversion formulas
-  effectiveRate: {
+  // Additional formulas for interest rate calculator
+  nominalToEffective: {
     formula: "i = (1 + i^{(m)}/m)^m - 1",
     explanation: "Converting a nominal rate i^{(m)} compounded m times per year to an effective annual rate i."
   },
-  forceOfInterest: {
-    formula: "δ = ln(1 + i)",
-    explanation: "Force of interest (δ) is the continuous compounding equivalent of an effective interest rate i. It represents the instantaneous rate of interest."
-  },
-  discountRate: {
-    formula: "d = i / (1 + i) = 1 - v",
-    explanation: "Discount rate (d) is related to the effective interest rate (i). It's used to calculate the present value by simple discount rather than by interest accumulation."
+  effectiveToNominal: {
+    formula: "i^{(m)} = m \\cdot [(1 + i)^{1/m} - 1]",
+    explanation: "Converting an effective annual rate i to a nominal rate i^{(m)} compounded m times per year."
   },
   
   // Payment calculation formulas
