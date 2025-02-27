@@ -112,7 +112,7 @@ In summary, you'll need to:
 3. Add deployment scripts to `package.json`
 4. Run `npm run deploy` to publish to GitHub Pages
 
-Your site will be available at `https://[your-github-username].github.io/ActuarialCalc/`
+Your site will be available at `https://brandostrong.github.io/ActuarialCalc/`
 
 ## Project Structure
 
