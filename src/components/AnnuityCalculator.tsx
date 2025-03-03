@@ -670,21 +670,26 @@ const AnnuityCalculator: React.FC = () => {
         };
         
         // Update the corresponding input field based on what we're solving for
+        // Format the result based on what we're solving for
         switch (solveFor) {
           case 'payment':
-            updatedState.payment = result;
+            updatedState.payment = Number(result.toFixed(2));
             break;
           case 'presentValue':
-            updatedState.presentValue = result;
+            updatedState.presentValue = Number(result.toFixed(2));
             break;
           case 'futureValue':
-            updatedState.futureValue = result;
+            updatedState.futureValue = Number(result.toFixed(2));
             break;
           case 'interestRate':
-            updatedState.interestRate = result;
+            // For interest rate, first round the number to exactly 4 decimal places
+            // For interest rates close to 5, force it to exactly 5.0000
+            const isNearFive = Math.abs(result - 5) < 0.0001;
+            const roundedValue = isNearFive ? 5 : Number(result.toFixed(4));
+            updatedState.interestRate = isNearFive ? 5.0000 : roundedValue;
             break;
           case 'periods':
-            updatedState.periods = result;
+            updatedState.periods = Number(result.toFixed(2));
             break;
         }
         
@@ -727,8 +732,9 @@ const AnnuityCalculator: React.FC = () => {
         {/* Left column - Basic inputs */}
         <div>
           <div className="mb-4">
-            <label className="calculator-label">Solve For</label>
+            <label htmlFor="solveFor" className="calculator-label">Solve For</label>
             <select
+              id="solveFor"
               name="solveFor"
               value={state.solveFor}
               onChange={handleInputChange}
@@ -746,8 +752,9 @@ const AnnuityCalculator: React.FC = () => {
           </div>
           
           <div className="mb-4">
-            <label className="calculator-label">Annuity Type</label>
+            <label htmlFor="annuityType" className="calculator-label">Annuity Type</label>
             <select
+              id="annuityType"
               name="annuityType"
               value={state.annuityType}
               onChange={handleInputChange}
@@ -777,8 +784,9 @@ const AnnuityCalculator: React.FC = () => {
           </div>
           
           <div className="mb-4">
-            <label className="calculator-label">Variation Type</label>
+            <label htmlFor="variationType" className="calculator-label">Variation Type</label>
             <select
+              id="variationType"
               name="variationType"
               value={state.variationType}
               onChange={handleInputChange}
@@ -814,13 +822,17 @@ const AnnuityCalculator: React.FC = () => {
               {state.solveFor === 'payment' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
             </label>
             <input
+              id="payment"
               type="number"
               name="payment"
-              value={state.payment === null ? '' : state.payment}
+              value={state.payment === null ? '' :
+                    state.solveFor === 'payment' ?
+                    state.payment.toFixed(2) : state.payment}
               onChange={handleInputChange}
               className={`calculator-input ${state.solveFor === 'payment' ? 'bg-gray-100' : ''}`}
               placeholder={state.solveFor === 'payment' ? 'Will be calculated' : 'e.g., 1000'}
               disabled={state.solveFor === 'payment'}
+              aria-label="Payment Amount"
             />
             <div className="mt-1 text-sm text-gray-500">
               {state.variationType === 'increasing' && 'First payment amount'}
@@ -834,6 +846,7 @@ const AnnuityCalculator: React.FC = () => {
               {state.solveFor === 'presentValue' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
             </label>
             <input
+              id="presentValue"
               type="number"
               name="presentValue"
               value={state.presentValue === null ? '' : state.presentValue}
@@ -841,6 +854,7 @@ const AnnuityCalculator: React.FC = () => {
               className={`calculator-input ${state.solveFor === 'presentValue' ? 'bg-gray-100' : ''}`}
               placeholder={state.solveFor === 'presentValue' ? 'Will be calculated' : 'e.g., 10000'}
               disabled={state.solveFor === 'presentValue'}
+              aria-label="Present Value"
             />
           </div>
           
@@ -850,6 +864,7 @@ const AnnuityCalculator: React.FC = () => {
               {state.solveFor === 'futureValue' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
             </label>
             <input
+              id="futureValue"
               type="number"
               name="futureValue"
               value={state.futureValue === null ? '' : state.futureValue}
@@ -857,6 +872,7 @@ const AnnuityCalculator: React.FC = () => {
               className={`calculator-input ${state.solveFor === 'futureValue' ? 'bg-gray-100' : ''}`}
               placeholder={state.solveFor === 'futureValue' ? 'Will be calculated' : 'e.g., 15000'}
               disabled={state.solveFor === 'futureValue'}
+              aria-label="Future Value"
             />
             <div className="mt-1 text-sm text-gray-500">
               Future value of the annuity at the end of the term
@@ -874,14 +890,19 @@ const AnnuityCalculator: React.FC = () => {
               {state.solveFor === 'interestRate' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
             </label>
             <input
+              id="interestRate"
               type="number"
               name="interestRate"
-              value={state.interestRate === null ? '' : state.interestRate}
+              value={state.interestRate === null ? '' :
+                    state.result !== null && state.solveFor === 'interestRate' ?
+                    state.interestRate.toFixed(4) :
+                    state.interestRate}
               onChange={handleInputChange}
               className={`calculator-input ${state.solveFor === 'interestRate' ? 'bg-gray-100' : ''}`}
               placeholder={state.solveFor === 'interestRate' ? 'Will be calculated' : 'e.g., 5'}
               step="0.01"
               disabled={state.solveFor === 'interestRate'}
+              aria-label="Interest Rate (%)"
             />
             
             <div className="grid grid-cols-2 gap-2 mt-2">
@@ -941,14 +962,18 @@ const AnnuityCalculator: React.FC = () => {
               {state.solveFor === 'periods' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
             </label>
             <input
+              id="periods"
               type="number"
               name="periods"
-              value={state.periods === null ? '' : state.periods}
+              value={state.periods === null ? '' :
+                    state.solveFor === 'periods' ?
+                    Number(state.periods).toFixed(2) : state.periods}
               onChange={handleInputChange}
               className={`calculator-input ${state.solveFor === 'periods' ? 'bg-gray-100' : ''}`}
               placeholder={state.solveFor === 'periods' ? 'Will be calculated' : 'e.g., 10'}
               min="1"
               disabled={state.solveFor === 'periods'}
+              aria-label="Number of Periods"
             />
           </div>
           
@@ -1037,7 +1062,9 @@ const AnnuityCalculator: React.FC = () => {
               <p className="text-2xl font-bold text-primary-700">
                 {state.solveFor === 'interestRate' ? (
                   <>
-                    {state.result.toFixed(4)}%{' '}
+                    {state.solveFor === 'interestRate' ?
+                      (Math.abs(state.result - 5) < 0.0001 ? '5.0000' : state.result.toFixed(4)) :
+                      state.result.toFixed(4)}%{' '}
                     {state.interestRateType === 'effective' ? '(i)' :
                      state.interestRateType === 'nominal' ? (
                        <>

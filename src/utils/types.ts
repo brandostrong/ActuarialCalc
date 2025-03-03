@@ -1,9 +1,12 @@
 // Types for the calculators
 
 export type InterestRateType = 'effective' | 'nominal' | 'force' | 'simple' | 'discount' | 'nominal-simple';
+export type PerpetuityType = 'basic' | 'growing';
+export type PerpetuityPaymentType = 'immediate' | 'due' | 'continuous';
+export type PerpetuityPartType = 'payment' | 'presentValue' | 'growthRate' | 'deferredPeriods';
 export type AnnuityType = 'immediate' | 'due' | 'deferred';
 export type AnnuityVariationType = 'level' | 'increasing' | 'geometric';
-export type SolveForType = 'payment' | 'presentValue' | 'futureValue' | 'interestRate' | 'periods';
+export type SolveForType = 'payment' | 'presentValue' | 'futureValue' | 'interestRate' | 'periods' | 'increase';
 
 // Interest Rate Calculator Types
 
@@ -61,6 +64,21 @@ export interface AmortizationEntry {
   interestPayment: number;
   principalPayment: number;
   remainingBalance: number;
+}
+
+export interface PerpetuityCalculatorState {
+  perpetuityType: PerpetuityType;
+  paymentType: PerpetuityPaymentType;
+  solveFor: PerpetuityPartType;
+  payment: number | null;
+  presentValue: number | null;
+  interestRate: number | null;
+  interestRateType: InterestRateType;
+  compoundingFrequency: number;
+  growthRate: number | null;
+  deferredPeriods: number | null;
+  result: number | null;
+  error: string | null;
 }
 
 export interface CalculationResult {

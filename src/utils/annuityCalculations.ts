@@ -308,19 +308,17 @@ export const calculatePaymentFromPVIncreasing = (
     return (presentValue - (periods * (periods - 1) * increase) / 2) / periods;
   }
   
-  // For annuity immediate
-  let annuityFactor = (1 - Math.pow(1 + i, -periods)) / i;
-  let increasingFactor = (1 - Math.pow(1 + i, -periods)) / i - periods * Math.pow(1 + i, -periods) / i;
+  const v = 1 / (1 + i);
+
+  // Calculate basic annuity factors
+  const annuityFactor = (1 - Math.pow(v, periods)) / i;
+  const increasingFactor = (annuityFactor - periods * Math.pow(v, periods)) / i;
+
+  // Apply timing adjustment if needed
+  const timingFactor = annuityType === 'due' ? (1 + i) : 1;
   
-  // Adjust for annuity due if needed
-  if (annuityType === 'due') {
-    annuityFactor *= (1 + i);
-    increasingFactor *= (1 + i);
-  }
-  
-  // Solve for PMT from: PV = PMT * annuityFactor + I * increasingFactor
-  // PMT = (PV - I * increasingFactor) / annuityFactor
-  return (presentValue - increase * increasingFactor) / annuityFactor;
+  // Solve for PMT using standard increasing annuity formula
+  return (presentValue - increase * increasingFactor * timingFactor) / (annuityFactor * timingFactor);
 };
 
 // Calculate payment for a given present value of a geometric annuity
