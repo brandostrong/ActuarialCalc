@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import FormulaTooltip from './FormulaTooltip';
 import AmortizationTable from './AmortizationTable';
+import AnnuityVisualization from './AnnuityVisualization';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import {
@@ -731,39 +732,52 @@ const AnnuityCalculator: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left column - Basic inputs */}
         <div>
-          <div className="mb-4">
-            <label htmlFor="solveFor" className="calculator-label">Solve For</label>
-            <select
-              id="solveFor"
-              name="solveFor"
-              value={state.solveFor}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="payment">Payment Amount</option>
-              <option value="presentValue">Present Value</option>
-              <option value="futureValue">Future Value</option>
-              <option value="interestRate">Interest Rate</option>
-              <option value="periods">Number of Periods</option>
-            </select>
-            <p className="text-sm text-gray-600 mt-1">
-              Select what you want to calculate. The corresponding field will be calculated when you click "Calculate".
-            </p>
-          </div>
           
           <div className="mb-4">
-            <label htmlFor="annuityType" className="calculator-label">Annuity Type</label>
-            <select
-              id="annuityType"
-              name="annuityType"
-              value={state.annuityType}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="immediate">Immediate (Ordinary Annuity)</option>
-              <option value="due">Due (Payments at beginning)</option>
-              <option value="deferred">Deferred Annuity</option>
-            </select>
+            <label className="calculator-label">Annuity Type</label>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setState(prev => ({ ...prev, annuityType: 'immediate' }))}
+                  className={`w-full py-2 px-4 rounded-l border ${
+                    state.annuityType === 'immediate'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Immediate
+                </button>
+              </div>
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setState(prev => ({ ...prev, annuityType: 'due' }))}
+                  className={`w-full py-2 px-4 rounded-r border ${
+                    state.annuityType === 'due'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Due
+                </button>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label htmlFor="deferredToggle" className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  id="deferredToggle"
+                  checked={state.annuityType === 'deferred'}
+                  onChange={(e) => setState(prev => ({
+                    ...prev,
+                    annuityType: e.target.checked ? 'deferred' : 'immediate'
+                  }))}
+                  className="form-checkbox h-4 w-4 text-primary-600 rounded border-gray-300"
+                />
+                <span className="ml-2 text-sm text-gray-600">Deferred Annuity</span>
+              </label>
+            </div>
             <div className="mt-1 text-sm text-gray-500">
               <FormulaTooltip
                 formulaKey={
@@ -839,46 +853,43 @@ const AnnuityCalculator: React.FC = () => {
               {state.variationType === 'geometric' && 'First payment amount'}
             </div>
           </div>
-          
+
+          <div className="mb-4">
+            <label className="calculator-label">Payment Frequency</label>
+            <select
+              name="paymentFrequency"
+              value={state.paymentFrequency}
+              onChange={handleInputChange}
+              className="calculator-input"
+            >
+              <option value="1">Annual (1/year)</option>
+              <option value="2">Semi-annual (2/year)</option>
+              <option value="4">Quarterly (4/year)</option>
+              <option value="12">Monthly (12/year)</option>
+            </select>
+          </div>
+
           <div className="mb-4">
             <label className="calculator-label">
-              Present Value
-              {state.solveFor === 'presentValue' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
+              Number of Periods
+              {state.solveFor === 'periods' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
             </label>
             <input
-              id="presentValue"
+              id="periods"
               type="number"
-              name="presentValue"
-              value={state.presentValue === null ? '' : state.presentValue}
+              name="periods"
+              value={state.periods === null ? '' :
+                    state.solveFor === 'periods' ?
+                    Number(state.periods).toFixed(2) : state.periods}
               onChange={handleInputChange}
-              className={`calculator-input ${state.solveFor === 'presentValue' ? 'bg-gray-100' : ''}`}
-              placeholder={state.solveFor === 'presentValue' ? 'Will be calculated' : 'e.g., 10000'}
-              disabled={state.solveFor === 'presentValue'}
-              aria-label="Present Value"
+              className={`calculator-input ${state.solveFor === 'periods' ? 'bg-gray-100' : ''}`}
+              placeholder={state.solveFor === 'periods' ? 'Will be calculated' : 'e.g., 10'}
+              min="1"
+              disabled={state.solveFor === 'periods'}
+              aria-label="Number of Periods"
             />
           </div>
-          
-          <div className="mb-4">
-            <label className="calculator-label">
-              Future Value
-              {state.solveFor === 'futureValue' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
-            </label>
-            <input
-              id="futureValue"
-              type="number"
-              name="futureValue"
-              value={state.futureValue === null ? '' : state.futureValue}
-              onChange={handleInputChange}
-              className={`calculator-input ${state.solveFor === 'futureValue' ? 'bg-gray-100' : ''}`}
-              placeholder={state.solveFor === 'futureValue' ? 'Will be calculated' : 'e.g., 15000'}
-              disabled={state.solveFor === 'futureValue'}
-              aria-label="Future Value"
-            />
-            <div className="mt-1 text-sm text-gray-500">
-              Future value of the annuity at the end of the term
-            </div>
-          </div>
-          
+
           {/* Removed Accumulated Value input field */}
         </div>
         
@@ -956,28 +967,7 @@ const AnnuityCalculator: React.FC = () => {
             </div>
           </div>
           
-          <div className="mb-4">
-            <label className="calculator-label">
-              Number of Periods
-              {state.solveFor === 'periods' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
-            </label>
-            <input
-              id="periods"
-              type="number"
-              name="periods"
-              value={state.periods === null ? '' :
-                    state.solveFor === 'periods' ?
-                    Number(state.periods).toFixed(2) : state.periods}
-              onChange={handleInputChange}
-              className={`calculator-input ${state.solveFor === 'periods' ? 'bg-gray-100' : ''}`}
-              placeholder={state.solveFor === 'periods' ? 'Will be calculated' : 'e.g., 10'}
-              min="1"
-              disabled={state.solveFor === 'periods'}
-              aria-label="Number of Periods"
-            />
-          </div>
-          
-          {state.variationType === 'increasing' && (
+         {state.variationType === 'increasing' && (
             <div className="mb-4">
               <label className="calculator-label">Increase Amount</label>
               <input
@@ -1016,24 +1006,67 @@ const AnnuityCalculator: React.FC = () => {
             </div>
           )}
           
-          <div className="mb-4">
-            <label className="calculator-label">Payment Frequency</label>
-            <select
-              name="paymentFrequency"
-              value={state.paymentFrequency}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="1">Annual (1/year)</option>
-              <option value="2">Semi-annual (2/year)</option>
-              <option value="4">Quarterly (4/year)</option>
-              <option value="12">Monthly (12/year)</option>
-            </select>
-          </div>
-        </div>
-      </div>
-      
-      <div className="mt-6">
+           <div className="mb-4">
+             <label className="calculator-label">
+               Present Value
+               {state.solveFor === 'presentValue' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
+             </label>
+             <input
+               id="presentValue"
+               type="number"
+               name="presentValue"
+               value={state.presentValue === null ? '' : state.presentValue}
+               onChange={handleInputChange}
+               className={`calculator-input ${state.solveFor === 'presentValue' ? 'bg-gray-100' : ''}`}
+               placeholder={state.solveFor === 'presentValue' ? 'Will be calculated' : 'e.g., 10000'}
+               disabled={state.solveFor === 'presentValue'}
+               aria-label="Present Value"
+             />
+           </div>
+           
+           <div className="mb-4">
+             <label className="calculator-label">
+               Future Value
+               {state.solveFor === 'futureValue' && <span className="text-primary-600 ml-2">(To be calculated)</span>}
+             </label>
+             <input
+               id="futureValue"
+               type="number"
+               name="futureValue"
+               value={state.futureValue === null ? '' : state.futureValue}
+               onChange={handleInputChange}
+               className={`calculator-input ${state.solveFor === 'futureValue' ? 'bg-gray-100' : ''}`}
+               placeholder={state.solveFor === 'futureValue' ? 'Will be calculated' : 'e.g., 15000'}
+               disabled={state.solveFor === 'futureValue'}
+               aria-label="Future Value"
+             />
+             <div className="mt-1 text-sm text-gray-500">
+               Future value of the annuity at the end of the term
+             </div>
+           </div>
+         </div>
+       </div>
+
+       <div className="mt-6">
+         <div className="mb-4">
+           <label htmlFor="solveFor" className="calculator-label">Solve For</label>
+           <select
+             id="solveFor"
+             name="solveFor"
+             value={state.solveFor}
+             onChange={handleInputChange}
+             className="calculator-input"
+           >
+             <option value="payment">Payment Amount</option>
+             <option value="presentValue">Present Value</option>
+             <option value="futureValue">Future Value</option>
+             <option value="interestRate">Interest Rate</option>
+             <option value="periods">Number of Periods</option>
+           </select>
+           <p className="text-sm text-gray-600 mt-1">
+             Select what you want to calculate. The corresponding field will be calculated when you click "Calculate".
+           </p>
+         </div>
         <button
           onClick={calculateResult}
           className="calculator-button"

@@ -13,7 +13,8 @@ import {
   calculatePresentValueGrowingPerpetuity,
   calculatePaymentBasicPerpetuity,
   calculatePaymentGrowingPerpetuity,
-  calculateGrowthRate
+  calculateGrowthRate,
+  calculateInterestRate
 } from '../utils/perpetuityCalculations';
 
 const initialState: PerpetuityCalculatorState = {
@@ -99,13 +100,18 @@ const PerpetuityCalculator: React.FC = () => {
         if (interestRate === null) missingFields.push('Interest Rate');
         if (perpetuityType === 'growing' && growthRate === null) missingFields.push('Growth Rate');
         break;
+case 'interestRate':
+  if (payment === null) missingFields.push('Payment Amount');
+  if (presentValue === null) missingFields.push('Present Value');
+  if (perpetuityType === 'growing' && growthRate === null) missingFields.push('Growth Rate');
+  break;
 
-      case 'growthRate':
-        if (payment === null) missingFields.push('Payment Amount');
-        if (presentValue === null) missingFields.push('Present Value');
-        if (interestRate === null) missingFields.push('Interest Rate');
-        break;
-    }
+case 'growthRate':
+  if (payment === null) missingFields.push('Payment Amount');
+  if (presentValue === null) missingFields.push('Present Value');
+  if (interestRate === null) missingFields.push('Interest Rate');
+  break;
+}
 
     if (missingFields.length > 0) {
       setState(prev => ({
@@ -188,6 +194,20 @@ const PerpetuityCalculator: React.FC = () => {
           }
           break;
 
+        case 'interestRate':
+          if (payment !== null && presentValue !== null) {
+            result = calculateInterestRate(
+              presentValue,
+              payment,
+              interestRateType,
+              compoundingFrequency,
+              state.paymentType,
+              state.deferredPeriods || 0,
+              perpetuityType === 'growing' ? growthRate : null
+            );
+          }
+          break;
+
         case 'growthRate':
           if (payment !== null && presentValue !== null && interestRate !== null) {
             result = calculateGrowthRate(
@@ -217,6 +237,9 @@ const PerpetuityCalculator: React.FC = () => {
             break;
           case 'presentValue':
             updatedState.presentValue = Number(result.toFixed(2));
+            break;
+          case 'interestRate':
+            updatedState.interestRate = Number(result.toFixed(4));
             break;
           case 'growthRate':
             updatedState.growthRate = Number(result.toFixed(4));
@@ -256,6 +279,23 @@ const PerpetuityCalculator: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Left column */}
         <div>
+          <div className="mb-4">
+            <label className="calculator-label">Solve For</label>
+            <select
+              name="solveFor"
+              value={state.solveFor}
+              onChange={handleInputChange}
+              className="calculator-input"
+            >
+              <option value="presentValue">Present Value</option>
+              <option value="payment">Payment Amount</option>
+              <option value="interestRate">Interest Rate</option>
+              {state.perpetuityType === 'growing' && (
+                <option value="growthRate">Growth Rate</option>
+              )}
+            </select>
+          </div>
+
           <div className="mb-4">
             <label className="calculator-label">Perpetuity Type</label>
             <select
@@ -304,22 +344,6 @@ const PerpetuityCalculator: React.FC = () => {
           </div>
 
           <div className="mb-4">
-            <label className="calculator-label">Solve For</label>
-            <select
-              name="solveFor"
-              value={state.solveFor}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="presentValue">Present Value</option>
-              <option value="payment">Payment Amount</option>
-              {state.perpetuityType === 'growing' && (
-                <option value="growthRate">Growth Rate</option>
-              )}
-            </select>
-          </div>
-
-          <div className="mb-4">
             <label className="calculator-label">
               Payment Amount
               {state.solveFor === 'payment' && (
@@ -337,36 +361,25 @@ const PerpetuityCalculator: React.FC = () => {
             />
           </div>
 
-          <div className="mb-4">
-            <label className="calculator-label">
-              Present Value
-              {state.solveFor === 'presentValue' && (
-                <span className="text-primary-600 ml-2">(To be calculated)</span>
-              )}
-            </label>
-            <input
-              type="number"
-              name="presentValue"
-              value={state.presentValue === null ? '' : state.presentValue}
-              onChange={handleInputChange}
-              className={`calculator-input ${state.solveFor === 'presentValue' ? 'bg-gray-100' : ''}`}
-              placeholder={state.solveFor === 'presentValue' ? 'Will be calculated' : 'e.g., 20000'}
-              disabled={state.solveFor === 'presentValue'}
-            />
-          </div>
         </div>
 
         {/* Right column */}
         <div>
           <div className="mb-4">
-            <label className="calculator-label">Interest Rate (%)</label>
+            <label className="calculator-label">
+              Interest Rate (%)
+              {state.solveFor === 'interestRate' && (
+                <span className="text-primary-600 ml-2">(To be calculated)</span>
+              )}
+            </label>
             <input
               type="number"
               name="interestRate"
               value={state.interestRate === null ? '' : state.interestRate}
               onChange={handleInputChange}
-              className="calculator-input"
-              placeholder="e.g., 5"
+              className={`calculator-input ${state.solveFor === 'interestRate' ? 'bg-gray-100' : ''}`}
+              placeholder={state.solveFor === 'interestRate' ? 'Will be calculated' : 'e.g., 5'}
+              disabled={state.solveFor === 'interestRate'}
               step="0.01"
             />
 
@@ -429,6 +442,24 @@ const PerpetuityCalculator: React.FC = () => {
               </div>
             </div>
           )}
+
+          <div className="mb-4">
+            <label className="calculator-label">
+              Present Value
+              {state.solveFor === 'presentValue' && (
+                <span className="text-primary-600 ml-2">(To be calculated)</span>
+              )}
+            </label>
+            <input
+              type="number"
+              name="presentValue"
+              value={state.presentValue === null ? '' : state.presentValue}
+              onChange={handleInputChange}
+              className={`calculator-input ${state.solveFor === 'presentValue' ? 'bg-gray-100' : ''}`}
+              placeholder={state.solveFor === 'presentValue' ? 'Will be calculated' : 'e.g., 20000'}
+              disabled={state.solveFor === 'presentValue'}
+            />
+          </div>
         </div>
       </div>
 
@@ -447,13 +478,14 @@ const PerpetuityCalculator: React.FC = () => {
                 <strong>
                   {state.solveFor === 'payment' ? 'Payment Amount' :
                    state.solveFor === 'presentValue' ? 'Present Value' :
+                   state.solveFor === 'interestRate' ? 'Interest Rate' :
                    'Growth Rate'}:
-                </strong>
-              </p>
-              <p className="text-2xl font-bold text-primary-700">
-                {state.solveFor === 'growthRate'
-                  ? `${state.result.toFixed(4)}%`
-                  : state.result.toFixed(2)}
+               </strong>
+             </p>
+             <p className="text-2xl font-bold text-primary-700">
+               {state.solveFor === 'growthRate' || state.solveFor === 'interestRate'
+                 ? `${state.result.toFixed(4)}%`
+                 : state.result.toFixed(2)}
               </p>
             </div>
 
@@ -469,31 +501,47 @@ const PerpetuityCalculator: React.FC = () => {
                       <>
                         {state.deferredPeriods && state.deferredPeriods > 0 ? (
                           // Deferred perpetuity
-                          <InlineMath math={`PV = \\frac{PMT${
-                            state.paymentType === 'due' ? '(1+i)' :
-                            state.paymentType === 'continuous' ? 'e^{\\delta/2}' : ''
-                          }}{i} \\cdot v^{${state.deferredPeriods}} \\text{ where } v = \\frac{1}{1+i}`} />
+                          <InlineMath math={`PV = ${
+                            state.paymentType === 'due' ? '\\ddot{a}_{\\overline{\\infty}|}' :
+                            state.paymentType === 'continuous' ? '\\overline{a}_{\\overline{\\infty}|}' : 
+                            'a_{\\overline{\\infty}|}'
+                          } \\cdot v^{${state.deferredPeriods}} = ${
+                            state.paymentType === 'due' ? '\\frac{1}{d}' :
+                            state.paymentType === 'continuous' ? '\\frac{\\delta}{i \\cdot \\delta}' : 
+                            '\\frac{1}{i}'
+                          } \\cdot v^{${state.deferredPeriods}}`} />
                         ) : (
                           // Immediate perpetuity
-                          <InlineMath math={`PV = \\frac{PMT${
-                            state.paymentType === 'due' ? '(1+i)' :
-                            state.paymentType === 'continuous' ? 'e^{\\delta/2}' : ''
-                          }}{i}`} />
+                          <InlineMath math={`PV = ${
+                            state.paymentType === 'due' ? '\\ddot{a}_{\\overline{\\infty}|} = \\frac{1}{d} = \\frac{1+i}{i}' :
+                            state.paymentType === 'continuous' ? '\\overline{a}_{\\overline{\\infty}|} = \\frac{1}{\\delta}' : 
+                            'a_{\\overline{\\infty}|} = \\frac{1}{i}'
+                          }`} />
                         )}
                       </>
                     )}
                     {state.solveFor === 'payment' && (
                       <>
                         {state.deferredPeriods && state.deferredPeriods > 0 ? (
-                          <InlineMath math={`PMT = \\frac{PV \\cdot i}{${
-                            state.paymentType === 'due' ? '(1+i)' :
-                            state.paymentType === 'continuous' ? 'e^{\\delta/2}' : '1'
-                          }} \\cdot (1+i)^{${state.deferredPeriods}}`} />
+                          <InlineMath math={`PMT = \\frac{PV}{${
+                            state.paymentType === 'due' ? '\\ddot{a}_{\\overline{\\infty}|}' :
+                            state.paymentType === 'continuous' ? '\\overline{a}_{\\overline{\\infty}|}' : 
+                            'a_{\\overline{\\infty}|}'
+                          } \\cdot v^{${state.deferredPeriods}}} = PV \\cdot ${
+                            state.paymentType === 'due' ? 'd' :
+                            state.paymentType === 'continuous' ? '\\delta' : 
+                            'i'
+                          } \\cdot (1+i)^{${state.deferredPeriods}}`} />
                         ) : (
-                          <InlineMath math={`PMT = \\frac{PV \\cdot i}{${
-                            state.paymentType === 'due' ? '(1+i)' :
-                            state.paymentType === 'continuous' ? 'e^{\\delta/2}' : '1'
-                          }}`} />
+                          <InlineMath math={`PMT = \\frac{PV}{${
+                            state.paymentType === 'due' ? '\\ddot{a}_{\\overline{\\infty}|}' :
+                            state.paymentType === 'continuous' ? '\\overline{a}_{\\overline{\\infty}|}' : 
+                            'a_{\\overline{\\infty}|}'
+                          }} = PV \\cdot ${
+                            state.paymentType === 'due' ? 'd' :
+                            state.paymentType === 'continuous' ? '\\delta' : 
+                            'i'
+                          }`} />
                         )}
                       </>
                     )}
@@ -504,37 +552,45 @@ const PerpetuityCalculator: React.FC = () => {
                     {state.solveFor === 'presentValue' && (
                       <>
                         {state.deferredPeriods && state.deferredPeriods > 0 ? (
-                          <InlineMath math={`PV = \\frac{PMT${
-                            state.paymentType === 'due' ? '(1+i)' :
-                            state.paymentType === 'continuous' ? 'e^{\\delta/2}' : ''
-                          }}{i-g} \\cdot v^{${state.deferredPeriods}}`} />
+                          <InlineMath math={`PV = \\frac{PMT}{i-g}${
+                            state.paymentType === 'due' ? ' \\cdot (1+i)' :
+                            state.paymentType === 'continuous' ? ' \\cdot e^{\\delta/2}' : ''
+                          } \\cdot v^{${state.deferredPeriods}}`} />
                         ) : (
-                          <InlineMath math={`PV = \\frac{PMT${
-                            state.paymentType === 'due' ? '(1+i)' :
-                            state.paymentType === 'continuous' ? 'e^{\\delta/2}' : ''
-                          }}{i-g}`} />
+                          <InlineMath math={`PV = \\frac{PMT}{i-g}${
+                            state.paymentType === 'due' ? ' \\cdot (1+i)' :
+                            state.paymentType === 'continuous' ? ' \\cdot e^{\\delta/2}' : ''
+                          }`} />
                         )}
                       </>
                     )}
                     {state.solveFor === 'payment' && (
                       <>
                         {state.deferredPeriods && state.deferredPeriods > 0 ? (
-                          <InlineMath math={`PMT = \\frac{PV(i-g)}{${
+                          <InlineMath math={`PMT = \\frac{PV \\cdot (i-g)}{${
                             state.paymentType === 'due' ? '(1+i)' :
                             state.paymentType === 'continuous' ? 'e^{\\delta/2}' : '1'
                           }} \\cdot (1+i)^{${state.deferredPeriods}}`} />
                         ) : (
-                          <InlineMath math={`PMT = \\frac{PV(i-g)}{${
+                          <InlineMath math={`PMT = \\frac{PV \\cdot (i-g)}{${
                             state.paymentType === 'due' ? '(1+i)' :
                             state.paymentType === 'continuous' ? 'e^{\\delta/2}' : '1'
                           }}`} />
                         )}
                       </>
                     )}
+                    {state.solveFor === 'interestRate' && (
+                      <InlineMath math={`i = \\text{Solution of } PV = \\frac{PMT${
+                        state.paymentType === 'due' ? '(1+i)' :
+                        state.paymentType === 'continuous' ? 'e^{\\delta/2}' : ''
+                      }}{i-g}${
+                        state.deferredPeriods && state.deferredPeriods > 0 ?
+                        ` \\cdot v^{${state.deferredPeriods}}` : ''}`} />
+                    )}
                     {state.solveFor === 'growthRate' && (
                       <InlineMath math={`g = i - \\frac{PMT${
-                        state.paymentType === 'due' ? '/(1+i)' :
-                        state.paymentType === 'continuous' ? '/e^{\\delta/2}' : ''
+                        state.paymentType === 'due' ? '(1+i)' :
+                        state.paymentType === 'continuous' ? 'e^{\\delta/2}' : ''
                       }}{PV${state.deferredPeriods && state.deferredPeriods > 0 ? ` \\cdot (1+i)^{${state.deferredPeriods}}` : ''}}`} />
                     )}
                   </>
@@ -551,24 +607,24 @@ const PerpetuityCalculator: React.FC = () => {
             <h4 className="font-medium text-gray-700 mb-1">Basic Perpetuity</h4>
             <div className="space-y-2">
               <div>
-                <h5 className="text-sm font-medium text-gray-600">End-of-Period</h5>
+                <h5 className="text-sm font-medium text-gray-600">End-of-Period (Immediate)</h5>
                 <ul className="list-disc list-inside text-sm text-gray-600">
-                  <li><InlineMath math="PV = \frac{PMT}{i}" /></li>
-                  <li><InlineMath math="PV = \frac{PMT}{i} \cdot v^m \text{ (deferred m periods)}" /></li>
+                  <li><InlineMath math="a_{\overline{\infty}|} = \frac{1}{i}" /></li>
+                  <li><InlineMath math="{}_{m|}a_{\overline{\infty}|} = \frac{1}{i} \cdot v^m" /></li>
                 </ul>
               </div>
               <div>
-                <h5 className="text-sm font-medium text-gray-600">Beginning-of-Period</h5>
+                <h5 className="text-sm font-medium text-gray-600">Beginning-of-Period (Due)</h5>
                 <ul className="list-disc list-inside text-sm text-gray-600">
-                  <li><InlineMath math="PV = \frac{PMT(1+i)}{i}" /></li>
-                  <li><InlineMath math="PV = \frac{PMT(1+i)}{i} \cdot v^m \text{ (deferred)}" /></li>
+                  <li><InlineMath math="\ddot{a}_{\overline{\infty}|} = \frac{1}{d} = \frac{1+i}{i}" /></li>
+                  <li><InlineMath math="{}_{m|}\ddot{a}_{\overline{\infty}|} = \frac{1+i}{i} \cdot v^m" /></li>
                 </ul>
               </div>
               <div>
                 <h5 className="text-sm font-medium text-gray-600">Continuous Payments</h5>
                 <ul className="list-disc list-inside text-sm text-gray-600">
-                  <li><InlineMath math="PV = \frac{PMT \cdot e^{\delta/2}}{i}" /></li>
-                  <li><InlineMath math="PV = \frac{PMT \cdot e^{\delta/2}}{i} \cdot v^m \text{ (deferred)}" /></li>
+                  <li><InlineMath math="\overline{a}_{\overline{\infty}|} = \frac{1}{\delta}" /></li>
+                  <li><InlineMath math="{}_{m|}\overline{a}_{\overline{\infty}|} = \frac{1}{\delta} \cdot v^m" /></li>
                 </ul>
               </div>
             </div>
@@ -578,27 +634,27 @@ const PerpetuityCalculator: React.FC = () => {
             <h4 className="font-medium text-gray-700 mb-1">Growing Perpetuity</h4>
             <div className="space-y-2">
               <div>
-                <h5 className="text-sm font-medium text-gray-600">End-of-Period</h5>
+                <h5 className="text-sm font-medium text-gray-600">End-of-Period (Immediate)</h5>
                 <ul className="list-disc list-inside text-sm text-gray-600">
-                  <li><InlineMath math="PV = \frac{PMT}{i-g}" /></li>
-                  <li><InlineMath math="PV = \frac{PMT}{i-g} \cdot v^m \text{ (deferred)}" /></li>
+                  <li><InlineMath math="\frac{1}{i-r}" /></li>
+                  <li><InlineMath math="\frac{1}{i-r} \cdot v^m" /></li>
                 </ul>
               </div>
               <div>
-                <h5 className="text-sm font-medium text-gray-600">Beginning-of-Period</h5>
+                <h5 className="text-sm font-medium text-gray-600">Beginning-of-Period (Due)</h5>
                 <ul className="list-disc list-inside text-sm text-gray-600">
-                  <li><InlineMath math="PV = \frac{PMT(1+i)}{i-g}" /></li>
-                  <li><InlineMath math="PV = \frac{PMT(1+i)}{i-g} \cdot v^m \text{ (deferred)}" /></li>
+                  <li><InlineMath math="\frac{1+i}{i-r}" /></li>
+                  <li><InlineMath math="\frac{1+i}{i-r} \cdot v^m" /></li>
                 </ul>
               </div>
               <div>
                 <h5 className="text-sm font-medium text-gray-600">Continuous Payments</h5>
                 <ul className="list-disc list-inside text-sm text-gray-600">
-                  <li><InlineMath math="PV = \frac{PMT \cdot e^{\delta/2}}{i-g}" /></li>
-                  <li><InlineMath math="PV = \frac{PMT \cdot e^{\delta/2}}{i-g} \cdot v^m \text{ (deferred)}" /></li>
+                  <li><InlineMath math="\frac{1}{i-r} \cdot e^{\delta/2}" /></li>
+                  <li><InlineMath math="\frac{1}{i-r} \cdot e^{\delta/2} \cdot v^m" /></li>
                 </ul>
               </div>
-              <p className="text-sm text-gray-600 mt-2">where g = growth rate (must be less than i)</p>
+              <p className="text-sm text-gray-600 mt-2">where r = growth rate (must be less than i)</p>
             </div>
           </div>
       </div>

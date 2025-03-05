@@ -3,7 +3,7 @@
 export type InterestRateType = 'effective' | 'nominal' | 'force' | 'simple' | 'discount' | 'nominal-simple';
 export type PerpetuityType = 'basic' | 'growing';
 export type PerpetuityPaymentType = 'immediate' | 'due' | 'continuous';
-export type PerpetuityPartType = 'payment' | 'presentValue' | 'growthRate' | 'deferredPeriods';
+export type PerpetuityPartType = 'payment' | 'presentValue' | 'interestRate' | 'growthRate' | 'deferredPeriods';
 export type AnnuityType = 'immediate' | 'due' | 'deferred';
 export type AnnuityVariationType = 'level' | 'increasing' | 'geometric';
 export type SolveForType = 'payment' | 'presentValue' | 'futureValue' | 'interestRate' | 'periods' | 'increase';

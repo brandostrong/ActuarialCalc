@@ -4,15 +4,16 @@ import { convertInterestRate } from './annuityCalculations';
 // Helper function to adjust for payment timing
 const getPaymentAdjustment = (
   paymentType: PerpetuityPaymentType,
-  effectiveRate: number
+  rate: number
 ): number => {
+  const i = rate / 100;
   switch (paymentType) {
     case 'immediate':
       return 1;
     case 'due':
-      return 1 + effectiveRate / 100;
+      return 1 + i;
     case 'continuous':
-      return Math.exp(effectiveRate / 200); // average of beginning and end of period
+      return Math.exp(i / 2);
     default:
       return 1;
   }
@@ -27,25 +28,25 @@ export const calculatePresentValueBasicPerpetuity = (
   paymentType: PerpetuityPaymentType = 'immediate',
   deferredPeriods: number = 0
 ): number => {
-  // Convert interest rate to effective rate if needed
-  const effectiveRate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
-  
-  // Convert to decimal
-  const i = effectiveRate / 100;
-  
-  if (i <= 0) {
+  if (interestRate <= 0) {
     throw new Error('Interest rate must be positive for perpetuity calculations');
   }
 
-  // Get payment timing adjustment
-  const adjustment = getPaymentAdjustment(paymentType, effectiveRate);
+  // Get the effective rate if needed
+  let rate = interestRate;
+  if (interestRateType !== 'effective') {
+    rate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
+  }
   
-  // Calculate base present value
-  let presentValue = (payment * adjustment) / i;
+  // Calculate base present value: PV = PMT / (i/100)
+  let presentValue = payment / (rate / 100);
+  
+  // Apply payment timing adjustment
+  presentValue = presentValue * getPaymentAdjustment(paymentType, rate);
   
   // Apply deferral discount if needed
   if (deferredPeriods > 0) {
-    presentValue = presentValue / Math.pow(1 + i, deferredPeriods);
+    presentValue = presentValue / Math.pow(1 + rate/100, deferredPeriods);
   }
   
   return presentValue;
@@ -61,30 +62,29 @@ export const calculatePresentValueGrowingPerpetuity = (
   paymentType: PerpetuityPaymentType = 'immediate',
   deferredPeriods: number = 0
 ): number => {
-  // Convert interest rate to effective rate if needed
-  const effectiveRate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
-  
-  // Convert to decimals
-  const i = effectiveRate / 100;
-  const g = growthRate / 100;
-  
-  if (i <= 0) {
+  if (interestRate <= 0) {
     throw new Error('Interest rate must be positive for perpetuity calculations');
   }
-  
-  if (i <= g) {
+
+  if (interestRate <= growthRate) {
     throw new Error('Interest rate must be greater than growth rate for growing perpetuity calculations');
   }
 
-  // Get payment timing adjustment
-  const adjustment = getPaymentAdjustment(paymentType, effectiveRate);
+  // Get the effective rate if needed
+  let rate = interestRate;
+  if (interestRateType !== 'effective') {
+    rate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
+  }
   
-  // Calculate base present value
-  let presentValue = (payment * adjustment) / (i - g);
+  // Calculate base present value: PV = PMT / ((i-g)/100)
+  let presentValue = payment / ((rate - growthRate) / 100);
+  
+  // Apply payment timing adjustment
+  presentValue = presentValue * getPaymentAdjustment(paymentType, rate);
   
   // Apply deferral discount if needed
   if (deferredPeriods > 0) {
-    presentValue = presentValue / Math.pow(1 + i, deferredPeriods);
+    presentValue = presentValue / Math.pow(1 + rate/100, deferredPeriods);
   }
   
   return presentValue;
@@ -99,25 +99,25 @@ export const calculatePaymentBasicPerpetuity = (
   paymentType: PerpetuityPaymentType = 'immediate',
   deferredPeriods: number = 0
 ): number => {
-  // Convert interest rate to effective rate if needed
-  const effectiveRate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
-  
-  // Convert to decimal
-  const i = effectiveRate / 100;
-  
-  if (i <= 0) {
+  if (interestRate <= 0) {
     throw new Error('Interest rate must be positive for perpetuity calculations');
   }
 
-  // Get payment timing adjustment
-  const adjustment = getPaymentAdjustment(paymentType, effectiveRate);
+  // Get the effective rate if needed
+  let rate = interestRate;
+  if (interestRateType !== 'effective') {
+    rate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
+  }
   
-  // Calculate base payment
-  let payment = (presentValue * i) / adjustment;
+  // Calculate base payment: PMT = PV * (i/100)
+  let payment = presentValue * (rate / 100);
   
-  // Adjust for deferred periods
+  // Apply payment timing adjustment
+  payment = payment / getPaymentAdjustment(paymentType, rate);
+  
+  // Adjust for deferral if needed
   if (deferredPeriods > 0) {
-    payment = payment * Math.pow(1 + i, deferredPeriods);
+    payment = payment * Math.pow(1 + rate/100, deferredPeriods);
   }
   
   return payment;
@@ -133,30 +133,29 @@ export const calculatePaymentGrowingPerpetuity = (
   paymentType: PerpetuityPaymentType = 'immediate',
   deferredPeriods: number = 0
 ): number => {
-  // Convert interest rate to effective rate if needed
-  const effectiveRate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
-  
-  // Convert to decimals
-  const i = effectiveRate / 100;
-  const g = growthRate / 100;
-  
-  if (i <= 0) {
+  if (interestRate <= 0) {
     throw new Error('Interest rate must be positive for perpetuity calculations');
   }
-  
-  if (i <= g) {
+
+  if (interestRate <= growthRate) {
     throw new Error('Interest rate must be greater than growth rate for growing perpetuity calculations');
   }
 
-  // Get payment timing adjustment
-  const adjustment = getPaymentAdjustment(paymentType, effectiveRate);
+  // Get the effective rate if needed
+  let rate = interestRate;
+  if (interestRateType !== 'effective') {
+    rate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
+  }
   
-  // Calculate base payment
-  let payment = (presentValue * (i - g)) / adjustment;
+  // Calculate base payment: PMT = PV * ((i-g)/100)
+  let payment = presentValue * ((rate - growthRate) / 100);
   
-  // Adjust for deferred periods
+  // Apply payment timing adjustment
+  payment = payment / getPaymentAdjustment(paymentType, rate);
+  
+  // Adjust for deferral if needed
   if (deferredPeriods > 0) {
-    payment = payment * Math.pow(1 + i, deferredPeriods);
+    payment = payment * Math.pow(1 + rate/100, deferredPeriods);
   }
   
   return payment;
@@ -172,76 +171,85 @@ export const calculateGrowthRate = (
   paymentType: PerpetuityPaymentType = 'immediate',
   deferredPeriods: number = 0
 ): number => {
-  // Convert interest rate to effective rate if needed
-  const effectiveRate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
-  
-  // Convert interest rate to decimal
-  const i = effectiveRate / 100;
-  
-  if (i <= 0) {
+  if (interestRate <= 0) {
     throw new Error('Interest rate must be positive for perpetuity calculations');
   }
 
-  // Get payment timing adjustment
-  const adjustment = getPaymentAdjustment(paymentType, effectiveRate);
-  
-  // Adjust payment for timing and deferral
-  let adjustedPayment = payment / adjustment;
-  if (deferredPeriods > 0) {
-    adjustedPayment = adjustedPayment / Math.pow(1 + i, deferredPeriods);
+  // Get the effective rate if needed
+  let rate = interestRate;
+  if (interestRateType !== 'effective') {
+    rate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
   }
   
-  // From PV = PMT / (i - g), solve for g:
-  // PV * (i - g) = PMT
-  // PV * i - PV * g = PMT
-  // -PV * g = PMT - PV * i
-  // g = (PV * i - PMT) / PV
-  const g = (presentValue * i - adjustedPayment) / presentValue;
+  // From PV = PMT/(i-g), solve for g
+  // PV = PMT * 100/((i-g))
+  // (i-g) = PMT * 100/PV
+  // g = i - PMT * 100/PV
+  let growthRate = rate - (payment * 100) / (presentValue * getPaymentAdjustment(paymentType, rate));
   
-  // Convert back to percentage
-  return g * 100;
+  // Adjust for deferred periods if needed
+  if (deferredPeriods > 0) {
+    growthRate = rate - (payment * Math.pow(1 + rate/100, deferredPeriods) * 100) / (presentValue * getPaymentAdjustment(paymentType, rate));
+  }
+  
+  return growthRate;
 };
 
-// Calculate deferred periods for perpetuity
-export const calculateDeferredPeriods = (
+// Calculate interest rate for perpetuity
+export const calculateInterestRate = (
   presentValue: number,
   payment: number,
-  interestRate: number,
   interestRateType: InterestRateType = 'effective',
   compoundingFrequency: number = 1,
   paymentType: PerpetuityPaymentType = 'immediate',
+  deferredPeriods: number = 0,
   growthRate: number | null = null
 ): number => {
-  // Convert interest rate to effective rate if needed
-  const effectiveRate = convertInterestRate(interestRate, interestRateType, 'effective', compoundingFrequency);
+  const g = growthRate || 0;
+  const tolerance = 0.0000001;
+  const maxIterations = 1000;
   
-  // Convert to decimal
-  const i = effectiveRate / 100;
-  
-  if (i <= 0) {
-    throw new Error('Interest rate must be positive for perpetuity calculations');
+  // Initial guess as percentage
+  let guess = payment * 100 / presentValue;
+  if (growthRate !== null) {
+    guess = Math.max(guess + g, g + 0.01);
   }
-
-  // Get payment timing adjustment
-  const adjustment = getPaymentAdjustment(paymentType, effectiveRate);
   
-  // Calculate theoretical present value without deferral
-  let theoreticalPV;
-  if (growthRate === null) {
-    // Basic perpetuity
-    theoreticalPV = (payment * adjustment) / i;
-  } else {
-    // Growing perpetuity
-    const g = growthRate / 100;
-    if (i <= g) {
-      throw new Error('Interest rate must be greater than growth rate for growing perpetuity calculations');
+  let left = g + 0.01;
+  let right = Math.max(guess * 2, 100);
+  
+  for (let iteration = 0; iteration < maxIterations; iteration++) {
+    const mid = (left + right) / 2;
+    
+    // Calculate PV with current rate guess
+    let calculatedPV = payment / (mid / 100);
+    
+    if (growthRate !== null) {
+      calculatedPV = payment / ((mid - g) / 100);
     }
-    theoreticalPV = (payment * adjustment) / (i - g);
+    
+    // Apply payment timing adjustment
+    calculatedPV = calculatedPV * getPaymentAdjustment(paymentType, mid);
+    
+    if (deferredPeriods > 0) {
+      calculatedPV = calculatedPV / Math.pow(1 + mid/100, deferredPeriods);
+    }
+    
+    const error = Math.abs(calculatedPV - presentValue);
+    if (error < tolerance * presentValue) {
+      return mid;
+    }
+    
+    if (calculatedPV > presentValue) {
+      left = mid;
+    } else {
+      right = mid;
+    }
+    
+    if (right - left < tolerance) {
+      return (left + right) / 2;
+    }
   }
   
-  // From PV = theoreticalPV / (1 + i)^m, solve for m:
-  // PV * (1 + i)^m = theoreticalPV
-  // (1 + i)^m = theoreticalPV / PV
-  // m = ln(theoreticalPV / PV) / ln(1 + i)
-  return Math.log(theoreticalPV / presentValue) / Math.log(1 + i);
+  throw new Error('Could not converge on interest rate solution');
 };
