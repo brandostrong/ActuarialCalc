@@ -738,6 +738,128 @@ export const calculateAccumulatedValue = (
 };
 
 // Generate amortization schedule for level annuities
+// Helper function to calculate total present value from a point
+const calculateTotalPresentValue = (
+  payment: number,
+  interestRate: number,
+  numPayments: number,
+  annuityType: AnnuityType,
+  increase: number = 0
+): number => {
+  const i = interestRate / 100;
+  
+  if (increase === 0) {
+    // Level annuity case
+    if (i === 0) return payment * numPayments;
+    return annuityType === 'immediate'
+      ? payment * (1 - Math.pow(1 + i, -numPayments)) / i
+      : payment * (1 - Math.pow(1 + i, -numPayments)) / i * (1 + i);
+  } else {
+    // Increasing annuity case
+    if (i === 0) return numPayments * payment + (numPayments * (numPayments - 1) * increase) / 2;
+    
+    // Use increasing annuity present value formulas
+    const annuityPV = payment * (1 - Math.pow(1 + i, -numPayments)) / i;
+    const increasingTerm = increase * (
+      (1 - Math.pow(1 + i, -numPayments)) / i -
+      numPayments * Math.pow(1 + i, -numPayments)
+    ) / i;
+    
+    return annuityType === 'immediate'
+      ? annuityPV + increasingTerm
+      : (annuityPV + increasingTerm) * (1 + i);
+  }
+};
+
+// Helper function to calculate geometric future value up to a point
+const calculateGeometricFutureValue = (
+  firstPayment: number,
+  interestRate: number,
+  growthRate: number,
+  totalPeriods: number,
+  currentPeriod: number,
+  annuityType: AnnuityType
+): number => {
+  const i = interestRate / 100;
+  const g = growthRate / 100;
+  if (i === g) {
+    return firstPayment * currentPeriod * Math.pow(1 + i, totalPeriods - currentPeriod);
+  }
+  if (i === 0) {
+    let sum = 0;
+    for (let t = 0; t < currentPeriod; t++) {
+      sum += firstPayment * Math.pow(1 + g, t);
+    }
+    return sum;
+  }
+  const factor = annuityType === 'immediate' ? 1 : (1 + i);
+  return firstPayment * (Math.pow(1 + g, currentPeriod) - Math.pow((1 + g)/(1 + i), currentPeriod)) / (i - g) *
+         Math.pow(1 + i, totalPeriods - currentPeriod) * factor;
+};
+
+// Helper function to calculate geometric present value from a point
+const calculateGeometricPresentValue = (
+  firstPayment: number,
+  interestRate: number,
+  growthRate: number,
+  remainingPeriods: number,
+  annuityType: AnnuityType
+): number => {
+  const i = interestRate / 100;
+  const g = growthRate / 100;
+  if (i === g) {
+    return firstPayment * remainingPeriods / (1 + i);
+  }
+  if (i === 0) {
+    let sum = 0;
+    for (let t = 0; t < remainingPeriods; t++) {
+      sum += firstPayment * Math.pow(1 + g, t);
+    }
+    return sum;
+  }
+  return annuityType === 'immediate'
+    ? firstPayment * (1 - Math.pow((1 + g)/(1 + i), remainingPeriods)) / (i - g)
+    : firstPayment * (1 - Math.pow((1 + g)/(1 + i), remainingPeriods)) / (i - g) * (1 + i);
+};
+
+// Helper function to calculate total future value up to a point
+const calculateTotalFutureValue = (
+  payment: number,
+  interestRate: number,
+  totalPeriods: number,
+  currentPeriod: number,
+  annuityType: AnnuityType,
+  increase: number = 0
+): number => {
+  const i = interestRate / 100;
+  
+  if (increase === 0) {
+    // Level annuity case
+    if (i === 0) return payment * currentPeriod;
+    return annuityType === 'immediate'
+      ? payment * (Math.pow(1 + i, totalPeriods) - Math.pow(1 + i, totalPeriods - currentPeriod)) / i
+      : payment * (Math.pow(1 + i, totalPeriods) - Math.pow(1 + i, totalPeriods - currentPeriod)) / i * (1 + i);
+  } else {
+    // Increasing annuity case - handle arithmetic progression
+    if (i === 0) {
+      let sum = 0;
+      for (let t = 0; t < currentPeriod; t++) {
+        sum += payment + t * increase;
+      }
+      return sum;
+    }
+    
+    // Use increasing annuity formulas with adjustment for current period
+    const base = payment * (Math.pow(1 + i, totalPeriods) - Math.pow(1 + i, totalPeriods - currentPeriod)) / i;
+    const incTerm = increase * (
+      (Math.pow(1 + i, totalPeriods) - Math.pow(1 + i, totalPeriods - currentPeriod)) / i -
+      currentPeriod * Math.pow(1 + i, totalPeriods - currentPeriod)
+    ) / i;
+    
+    return annuityType === 'immediate' ? base + incTerm : (base + incTerm) * (1 + i);
+  }
+};
+
 export const generateAmortizationSchedule = (
   loanAmount: number,
   interestRate: number,
@@ -755,6 +877,7 @@ export const generateAmortizationSchedule = (
   const i = interestRate / 100 / paymentFrequency;
   const n = periods * paymentFrequency;
   const deferredN = deferredPeriods * paymentFrequency;
+  const totalPeriods = n + deferredN;  // Total time including deferral
   
   // Calculate payment
   const payment = calculatePaymentFromPV(loanAmount, interestRate / paymentFrequency, n, annuityType, deferredPeriods);
@@ -770,10 +893,15 @@ export const generateAmortizationSchedule = (
       
       schedule.push({
         period,
-        payment: 0,
+        payment: 0,  // No payments during deferral
         interestPayment,
         principalPayment: 0,
-        remainingBalance
+        remainingBalance,
+        // During deferral:
+        // - FV = final value of payments (same as at start of payments since no payments made yet)
+        // - PV = loan amount growing with interest
+        futureValue: futureValueAnnuityImmediate(payment, interestRate, n),
+        presentValue: remainingBalance  // Current loan balance with accrued interest
       });
     }
   }
@@ -786,13 +914,38 @@ export const generateAmortizationSchedule = (
     const interestPayment = remainingBalance * i;
     const principalPayment = payment - interestPayment;
     remainingBalance -= principalPayment;
+    // Calculate periods remaining for future value
+    const periodsRemaining = n - (period - startPeriod);
+
+    // Calculate future value of all remaining payments at this point
+    const currentPeriod = period - startPeriod + 1;
+    const remainingPeriods = n - currentPeriod + 1;
+    
+    // Calculate both FV and PV
+    // Calculate both FV and PV with deferral adjustment
+    const futureValue = calculateTotalFutureValue(
+      payment,
+      interestRate,
+      totalPeriods,  // Use total periods including deferral
+      currentPeriod, // Current payments made
+      annuityType
+    );
+    
+    const presentValue = calculateTotalPresentValue(
+      payment,
+      interestRate,
+      remainingPeriods,
+      annuityType
+    );
     
     schedule.push({
       period,
       payment,
       interestPayment,
       principalPayment,
-      remainingBalance: Math.max(0, remainingBalance) // Avoid negative balance due to rounding
+      remainingBalance: Math.max(0, remainingBalance),
+      futureValue,
+      presentValue
     });
   }
   
@@ -813,6 +966,8 @@ export const generateIncreasingAnnuitySchedule = (
   interestPayment: number;
   principalPayment: number;
   remainingBalance: number;
+  futureValue?: number;
+  presentValue?: number;
 }> => {
   const i = interestRate / 100;
   const schedule = [];
@@ -834,12 +989,36 @@ export const generateIncreasingAnnuitySchedule = (
     // Update remaining balance
     remainingBalance -= principalPayment;
     
+    // Calculate current position and values
+    const currentPeriod = period - startPeriod + 1;
+    const remainingPeriods = periods - currentPeriod + 1;
+    
+    // Calculate future and present values
+    const futureValue = calculateTotalFutureValue(
+      firstPayment,   // Use first payment as base
+      interestRate,
+      periods,
+      currentPeriod,
+      annuityType,
+      increase      // Include the increase amount
+    );
+    
+    const presentValue = calculateTotalPresentValue(
+      firstPayment,   // Use first payment as base
+      interestRate,
+      remainingPeriods,
+      annuityType,
+      increase      // Include the increase amount
+    );
+
     schedule.push({
       period,
       payment,
       interestPayment,
       principalPayment,
-      remainingBalance: Math.max(0, remainingBalance) // Avoid negative balance due to rounding
+      remainingBalance: Math.max(0, remainingBalance),
+      futureValue,
+      presentValue
     });
   }
   
@@ -860,6 +1039,8 @@ export const generateGeometricAnnuitySchedule = (
   interestPayment: number;
   principalPayment: number;
   remainingBalance: number;
+  futureValue?: number;
+  presentValue?: number;
 }> => {
   const i = interestRate / 100;
   const g = growthRate / 100;
@@ -882,12 +1063,36 @@ export const generateGeometricAnnuitySchedule = (
     // Update remaining balance
     remainingBalance -= principalPayment;
     
+    // Calculate current position and values
+    const currentPeriod = period - startPeriod + 1;
+    const remainingPeriods = periods - currentPeriod + 1;
+    
+    // Calculate future and present values using geometric formulas
+    const futureValue = calculateGeometricFutureValue(
+      firstPayment,
+      interestRate,
+      growthRate,
+      periods,
+      currentPeriod,
+      annuityType
+    );
+    
+    const presentValue = calculateGeometricPresentValue(
+      payment,  // Use current payment as base for PV
+      interestRate,
+      growthRate,
+      remainingPeriods,
+      annuityType
+    );
+
     schedule.push({
       period,
       payment,
       interestPayment,
       principalPayment,
-      remainingBalance: Math.max(0, remainingBalance) // Avoid negative balance due to rounding
+      remainingBalance: Math.max(0, remainingBalance),
+      futureValue,
+      presentValue
     });
   }
   

@@ -64,6 +64,9 @@ export interface AmortizationEntry {
   interestPayment: number;
   principalPayment: number;
   remainingBalance: number;
+  accumulatedValue?: number;
+  futureValue?: number;
+  presentValue?: number;
 }
 
 export interface PerpetuityCalculatorState {

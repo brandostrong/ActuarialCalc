@@ -1,17 +1,45 @@
 import React, { useState, useEffect } from 'react';
 import FormulaTooltip from './FormulaTooltip';
 import AmortizationTable from './AmortizationTable';
-import AnnuityVisualization from './AnnuityVisualization';
+import AnnuityVisualization from './AnnuityVisualization.tsx';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import {
   AnnuityCalculatorState,
+  AmortizationEntry,
   // These types are used in type definitions but not directly referenced
   // AnnuityType,
   // AnnuityVariationType,
   // InterestRateType,
   SolveForType
 } from '../utils/types';
+
+const addAccumulatedValues = (schedule: AmortizationEntry[], effectiveRate: number, annuityType: string = 'immediate'): AmortizationEntry[] => {
+  const i = effectiveRate / 100;
+  let runningTotal = 0;
+  
+  return schedule.map((row, index) => {
+    const periodsToEnd = schedule.length - index;
+    
+    // Calculate this payment's accumulated value
+    let thisPaymentAccumulated;
+    if (annuityType === 'due') {
+      // For annuity due, payments earn interest for an extra period
+      thisPaymentAccumulated = row.payment * Math.pow(1 + i, periodsToEnd);
+    } else {
+      // For immediate annuity, payments earn interest for one less period
+      thisPaymentAccumulated = row.payment * Math.pow(1 + i, periodsToEnd - 1);
+    }
+    
+    // Add to running total for this period
+    runningTotal += thisPaymentAccumulated;
+    
+    return {
+      ...row,
+      accumulatedValue: runningTotal
+    };
+  });
+};
 import {
   presentValueAnnuityImmediate,
   presentValueAnnuityDue,
@@ -71,12 +99,10 @@ const AnnuityCalculator: React.FC = () => {
   const [state, setState] = useState<AnnuityCalculatorState>(initialState);
   const [showAmortizationTable, setShowAmortizationTable] = useState(false);
 
-  // Reset result when inputs change
+  // Reset error when inputs change
   useEffect(() => {
     setState(prev => ({
       ...prev,
-      result: null,
-      amortizationSchedule: null,
       error: null
     }));
   }, [
@@ -390,12 +416,16 @@ const AnnuityCalculator: React.FC = () => {
               }
               
               // Generate payment schedule for increasing annuities
-              amortizationSchedule = generateIncreasingAnnuitySchedule(
-                result,
-                payment,
-                increase,
+              amortizationSchedule = addAccumulatedValues(
+                generateIncreasingAnnuitySchedule(
+                  result,
+                  payment,
+                  increase,
+                  effectiveRate,
+                  periods,
+                  annuityType
+                ),
                 effectiveRate,
-                periods,
                 annuityType
               );
             } else if (variationType === 'geometric' && growthRate !== null) {
@@ -406,12 +436,16 @@ const AnnuityCalculator: React.FC = () => {
               }
               
               // Generate payment schedule for geometric annuities
-              amortizationSchedule = generateGeometricAnnuitySchedule(
-                result,
-                payment,
-                growthRate,
+              amortizationSchedule = addAccumulatedValues(
+                generateGeometricAnnuitySchedule(
+                  result,
+                  payment,
+                  growthRate,
+                  effectiveRate,
+                  periods,
+                  annuityType
+                ),
                 effectiveRate,
-                periods,
                 annuityType
               );
             }
@@ -438,7 +472,24 @@ const AnnuityCalculator: React.FC = () => {
           if (payment !== null && effectiveRate !== null && periods !== null) {
             if (variationType === 'level') {
               if (annuityType === 'immediate') {
-                result = futureValueAnnuityImmediate(payment, effectiveRate, periods);
+                // Calculate future value (will be our final result)
+                result = annuityType === 'immediate'
+                  ? futureValueAnnuityImmediate(payment, effectiveRate, periods)
+                  : futureValueAnnuityDue(payment, effectiveRate, periods);
+                
+                // Calculate present value for schedule
+                const pv = annuityType === 'immediate'
+                  ? presentValueAnnuityImmediate(payment, effectiveRate, periods)
+                  : presentValueAnnuityDue(payment, effectiveRate, periods);
+                  
+                // Generate schedule (future values are calculated inside)
+                amortizationSchedule = generateAmortizationSchedule(
+                  pv,
+                  effectiveRate,
+                  periods,
+                  paymentFrequency,
+                  annuityType
+                );
               } else if (annuityType === 'due') {
                 result = futureValueAnnuityDue(payment, effectiveRate, periods);
               } else if (annuityType === 'deferred' && state.deferredPeriods !== null) {
@@ -457,23 +508,36 @@ const AnnuityCalculator: React.FC = () => {
                 calculatedPV = presentValueAnnuityImmediate(payment, effectiveRate, periods);
               }
               
-              // Generate amortization schedule
+              // Generate and process amortization schedule
               if (annuityType === 'deferred' && state.deferredPeriods !== null) {
-                amortizationSchedule = generateAmortizationSchedule(
-                  calculatedPV,
+                amortizationSchedule = addAccumulatedValues(
+                  generateAmortizationSchedule(
+                    calculatedPV,
+                    effectiveRate,
+                    periods,
+                    paymentFrequency,
+                    annuityType,
+                    state.deferredPeriods!
+                  ),
                   effectiveRate,
-                  periods,
-                  paymentFrequency,
-                  annuityType,
-                  state.deferredPeriods!
+                  annuityType
                 );
               } else {
-                amortizationSchedule = generateAmortizationSchedule(
-                  calculatedPV,
+                amortizationSchedule = addAccumulatedValues(
+                  generateAmortizationSchedule(
+                    calculatedPV,
+                    effectiveRate,
+                    periods,
+                    paymentFrequency
+                  ),
                   effectiveRate,
-                  periods,
-                  paymentFrequency
+                  annuityType
                 );
+              }
+              
+              // Add accumulated values to the schedule
+              if (amortizationSchedule) {
+                amortizationSchedule = addAccumulatedValues(amortizationSchedule, effectiveRate);
               }
             } else if (variationType === 'increasing' && increase !== null) {
               // For increasing annuities, calculate future value
@@ -718,7 +782,7 @@ const AnnuityCalculator: React.FC = () => {
     <div className="annuity-calculator">
       <div className="mb-6">
         <p className="text-gray-700 mb-4">
-          This calculator helps you solve for different variables in annuity calculations. 
+          This calculator helps you solve for different variables in annuity calculations.
           Select what you want to solve for, enter the known values, and click "Calculate".
         </p>
       </div>
@@ -1082,7 +1146,17 @@ const AnnuityCalculator: React.FC = () => {
       
       {state.result !== null && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
-          <h3 className="text-lg font-medium text-gray-800 mb-2">Result</h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Result</h3>
+          {state.amortizationSchedule && state.amortizationSchedule.length > 0 && (
+            <div className="mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+              <h4 className="text-md font-medium text-gray-700 mb-3">Payment and Value Visualization</h4>
+              <AnnuityVisualization
+                schedule={state.amortizationSchedule}
+                annuityType={state.annuityType}
+                variationType={state.variationType}
+              />
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-gray-700">
@@ -1220,7 +1294,7 @@ const AnnuityCalculator: React.FC = () => {
             <div className="mt-4">
               <button
                 onClick={toggleAmortizationTable}
-                className="text-primary-600 hover:text-primary-800 font-medium"
+                className="text-primary-600 hover:text-primary-800 font-medium mt-6"
               >
                 {showAmortizationTable
                   ? 'Hide Payment Schedule'
