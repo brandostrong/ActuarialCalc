@@ -2,11 +2,15 @@ import { useState } from 'react';
 import AnnuityCalculator from './components/AnnuityCalculator';
 import PerpetuityCalculator from './components/PerpetuityCalculator';
 import InterestRateCalculator from './components/InterestRateCalculator';
+import BondCalculator from './components/BondCalculator';
+import DurationCalculator from './components/DurationCalculator';
+
+type CalculatorType = 'interestRate' | 'annuity' | 'perpetuity' | 'bond' | 'duration';
 
 function App() {
-  const [activeCalculator, setActiveCalculator] = useState<'interestRate' | 'annuity' | 'perpetuity'>('annuity');
+  const [activeCalculator, setActiveCalculator] = useState<CalculatorType>('annuity');
   
-  const handleCalculatorChange = (calculator: 'interestRate' | 'annuity' | 'perpetuity') => {
+  const handleCalculatorChange = (calculator: CalculatorType) => {
     setActiveCalculator(calculator);
   };
   return (
@@ -39,6 +43,18 @@ function App() {
             >
               Perpetuity Calculator
             </button>
+            <button
+              className={`py-4 px-6 font-medium text-lg ${activeCalculator === 'bond' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => handleCalculatorChange('bond')}
+            >
+              Bond Calculator
+            </button>
+            <button
+              className={`py-4 px-6 font-medium text-lg ${activeCalculator === 'duration' ? 'text-primary-600 border-b-2 border-primary-600' : 'text-gray-500 hover:text-gray-700'}`}
+              onClick={() => handleCalculatorChange('duration')}
+            >
+              Duration & Convexity Calculator
+            </button>
           </nav>
         </div>
         
@@ -66,6 +82,24 @@ function App() {
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Perpetuity Calculator</h2>
               <div className="bg-white rounded-lg shadow-md p-6">
                 <PerpetuityCalculator />
+              </div>
+            </section>
+          )}
+          
+          {activeCalculator === 'bond' && (
+            <section>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Bond Calculator</h2>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <BondCalculator />
+              </div>
+            </section>
+          )}
+
+          {activeCalculator === 'duration' && (
+            <section>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Duration & Convexity Calculator</h2>
+              <div className="bg-white rounded-lg shadow-md p-6">
+                <DurationCalculator />
               </div>
             </section>
           )}

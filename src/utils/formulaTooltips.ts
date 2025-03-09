@@ -105,6 +105,32 @@ export const formulaTooltips = {
   amortization: {
     formula: "L_t = PV \\cdot (1 + i)^t - PMT \\cdot s_{\\overline{t}|}",
     explanation: "The loan balance L_t after t payments in a loan amortization schedule. Interest in period t is calculated as L_{t-1} \\cdot i, and principal repayment is PMT - Interest."
+  },
+  
+  // Duration and Convexity formulas
+  macaulayDuration: {
+    formula: "MacD = -\\frac{P'(\\delta)}{P(\\delta)} = \\frac{\\sum_{t=0}^n t \\cdot v^t \\cdot CF_t}{\\sum_{t=0}^n v^t \\cdot CF_t}",
+    explanation: "Macaulay Duration is a weighted average of the times of each cash flow, where weights are the present values of each cash flow relative to the total present value."
+  },
+  modifiedDuration: {
+    formula: "ModD = -\\frac{P'(i)}{P(i)} = \\frac{\\sum_{t=0}^n t \\cdot v^{t+1} \\cdot CF_t}{\\sum_{t=0}^n v^t \\cdot CF_t} = MacD \\cdot v",
+    explanation: "Modified Duration is Macaulay Duration divided by (1 + i). It measures the approximate percentage change in price for a 100-basis-point change in yield."
+  },
+  macaulayConvexity: {
+    formula: "MacC = \\frac{P''(\\delta)}{P(\\delta)} = \\frac{\\sum_{t=0}^n t^2 \\cdot v^t \\cdot CF_t}{\\sum_{t=0}^n v^t \\cdot CF_t}",
+    explanation: "Macaulay Convexity measures the curvature of the price-yield relationship. For a zero-coupon bond, it equals the square of the time to maturity."
+  },
+  modifiedConvexity: {
+    formula: "ModC = \\frac{P''(i)}{P(i)} = \\frac{\\sum_{t=0}^n t \\cdot (t+1) \\cdot v^{t+2} \\cdot CF_t}{\\sum_{t=0}^n v^t \\cdot CF_t} = v^2(MacC + MacD)",
+    explanation: "Modified Convexity measures the rate of change of modified duration with respect to yield. It helps improve price approximations for large yield changes."
+  },
+  durationPassageOfTime: {
+    formula: "MacD_{t_1} = MacD_{t_2} - (t_2 - t_1)",
+    explanation: "The Macaulay Duration decreases linearly with the passage of time when the future cash flows remain unchanged."
+  },
+  portfolioDuration: {
+    formula: "MacD_P = \\frac{P_1}{P}MacD_1 + \\cdots + \\frac{P_m}{P}MacD_m",
+    explanation: "Portfolio Duration is the weighted average of the durations of its components, where weights are the relative market values."
   }
 };
 

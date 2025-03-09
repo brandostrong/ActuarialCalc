@@ -25,6 +25,18 @@ ActuarialCalc provides interactive calculators for various financial mathematics
 - Calculate time value of money (future value and present value)
 - Comprehensive formula references with explanations
 
+### Bond Calculator
+- Calculate present values of regular and callable bonds
+- Support for different bond types:
+  - Regular bonds with fixed coupon payments
+  - Callable bonds with multiple call dates and prices
+- Premium/discount analysis
+- Bond amortization schedules
+- Book value tracking
+- Cash flow visualization
+- Interactive timeline diagrams
+- Formula references with explanations
+
 ### Annuity Calculator
 - Calculate present value, future value, payment amount, interest rate, or number of periods
 - Support for different annuity types:
@@ -41,8 +53,21 @@ ActuarialCalc provides interactive calculators for various financial mathematics
 - Adjustable payment frequency
 
 ### Coming Soon
-- Perpetuity Calculator
-- Additional financial mathematics tools
+- Duration & Convexity Calculator
+  * Macaulay and Modified duration
+  * Convexity calculations
+  * Portfolio analysis
+  * First-order approximations
+
+- Immunization Calculator
+  * Redington and full immunization
+  * Asset allocation optimization
+  * Portfolio rebalancing
+
+- Advanced Interest Calculator
+  * Variable force of interest
+  * Real vs nominal rates
+  * Inflation adjustments
 
 ## Recent Updates
 
@@ -124,11 +149,14 @@ ActuarialCalc/
 │   ├── components/          # React components
 │   │   ├── AmortizationTable.tsx     # Displays payment schedules
 │   │   ├── AnnuityCalculator.tsx     # Main annuity calculator component
+│   │   ├── BondCalculator.tsx        # Bond valuation calculator
+│   │   ├── BondVisualization.tsx     # Bond cash flow diagrams
 │   │   ├── FormulaTooltip.tsx        # Tooltip component for formulas
 │   │   ├── InterestRateCalculator.tsx # Interest rate conversion calculator
-│   │   └── PerpetuityCalculator.tsx  # Perpetuity calculator (coming soon)
+│   │   └── PerpetuityCalculator.tsx  # Perpetuity calculator
 │   ├── utils/               # Utility functions and types
 │   │   ├── annuityCalculations.ts    # Core annuity calculation functions
+│   │   ├── bondCalculations.ts       # Bond valuation functions
 │   │   ├── formulaTooltips.ts        # Formula explanations
 │   │   ├── interestRateCalculations.ts # Interest rate conversion functions
 │   │   └── types.ts                  # TypeScript type definitions
@@ -163,9 +191,22 @@ ActuarialCalc/
 5. Click "Calculate" to get the result
 6. View the amortization/payment schedule by clicking "Show Amortization Table"
 
+### Bond Calculator
+
+1. Select the bond type (regular or callable)
+2. Enter the face value, coupon rate, and redemption value
+3. Enter the yield rate and number of periods
+4. For callable bonds, add call dates and prices
+5. Click "Calculate" to get:
+   - Bond price
+   - Premium/discount status
+   - Book value amortization schedule
+   - Cash flow visualization
+
 ### Formula References
 
 The application includes a comprehensive set of formula references with explanations for:
+- Bond pricing and valuation
 - Present and future value formulas
 - Interest rate conversions
 - Increasing and geometric annuities

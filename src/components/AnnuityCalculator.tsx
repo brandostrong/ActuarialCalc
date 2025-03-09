@@ -535,10 +535,7 @@ const AnnuityCalculator: React.FC = () => {
                 );
               }
               
-              // Add accumulated values to the schedule
-              if (amortizationSchedule) {
-                amortizationSchedule = addAccumulatedValues(amortizationSchedule, effectiveRate);
-              }
+              // Accumulated values are already added during schedule generation
             } else if (variationType === 'increasing' && increase !== null) {
               // For increasing annuities, calculate future value
               // First calculate present value

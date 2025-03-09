@@ -6,6 +6,7 @@ import {
   presentValueDeferredAnnuityImmediate,
   futureValueAnnuityImmediate,
   futureValueAnnuityDue,
+  futureValueDeferredAnnuityImmediate,
   presentValueIncreasingAnnuityImmediate,
   presentValueIncreasingAnnuityDue,
   
@@ -27,7 +28,8 @@ import {
   calculatePVFromFV,
   presentValueGeometricAnnuityImmediate,
   presentValueGeometricAnnuityDue,
-  calculatePaymentFromPVGeometric
+  calculatePaymentFromPVGeometric,
+  convertInterestRate
 } from './annuityCalculations';
 
 describe('Deferred Annuity Tests', () => {
@@ -451,6 +453,173 @@ describe('Increasing Annuity Tests', () => {
       expect(calculatedPeriods).toBeCloseTo(periods, 0);
     });
   });
+  
+  describe('Deferred Future Value Tests', () => {
+    it('verifies deferred annuity future value matches theoretical', () => {
+      // Test parameters
+      const payment = 100;
+      const interestRate = 5; // 5% annual rate
+      const periods = 10;
+      const deferredPeriods = 5;
+      
+      // Calculate future value
+      const futureValue = futureValueDeferredAnnuityImmediate(
+        payment,
+        interestRate,
+        periods,
+        deferredPeriods
+      );
+      
+      // Manual calculation:
+      // 1. Calculate FV of immediate annuity for the payment periods
+      const immediateAnnuityFV = futureValueAnnuityImmediate(payment, interestRate, periods);
+      // 2. This value needs to accumulate interest for the deferred periods
+      const expectedFV = immediateAnnuityFV * Math.pow(1 + interestRate/100, deferredPeriods);
+      
+      expect(futureValue).toBeCloseTo(expectedFV, 2);
+    });
+    
+    it('handles zero interest rate correctly', () => {
+      const payment = 100;
+      const periods = 10;
+      const deferredPeriods = 5;
+      
+      const futureValue = futureValueDeferredAnnuityImmediate(
+        payment,
+        0,
+        periods,
+        deferredPeriods
+      );
+      
+      // With zero interest rate, it's just the sum of payments
+      expect(futureValue).toBe(payment * periods);
+    });
+    
+    it('properly accounts for timing of deferred payments', () => {
+      // Test with small values for easy manual verification
+      const payment = 100;
+      const interestRate = 100; // 100% for easy doubling
+      const periods = 2;
+      const deferredPeriods = 1;
+      
+      const futureValue = futureValueDeferredAnnuityImmediate(
+        payment,
+        interestRate,
+        periods,
+        deferredPeriods
+      );
+      
+      // With 100% interest rate, one deferred period, and two payment periods:
+      // 1. First payment of 100 grows for 2 periods: 100 * (1 + 1)^2 = 400
+      // 2. Second payment of 100 grows for 1 period: 100 * (1 + 1) = 200
+      // Total expected: 600
+      expect(futureValue).toBeCloseTo(600, 2);
+    });
+  });
+});
+
+describe('Interest Rate Conversion Tests', () => {
+  describe('High Frequency Compounding', () => {
+    it('handles daily compounding correctly', () => {
+      const nominalRate = 5; // 5% nominal
+      const dailyCompounding = 365;
+      
+      const effectiveRate = convertInterestRate(
+        nominalRate,
+        'nominal',
+        'effective',
+        dailyCompounding
+      );
+      
+      // Calculate expected using continuous compounding as approximation
+      const expected = (Math.exp(nominalRate / 100) - 1) * 100;
+      expect(effectiveRate).toBeCloseTo(expected, 4);
+    });
+
+    it('maintains precision with high frequency conversion', () => {
+      const nominalRate = 12; // 12% nominal
+      const highFrequency = 365 * 24; // Hourly compounding
+      
+      const effectiveRate = convertInterestRate(
+        nominalRate,
+        'nominal',
+        'effective',
+        highFrequency
+      );
+      
+      // Convert back to nominal
+      const backToNominal = convertInterestRate(
+        effectiveRate,
+        'effective',
+        'nominal',
+        highFrequency
+      );
+      
+      expect(backToNominal).toBeCloseTo(nominalRate, 4);
+    });
+
+    it('handles discount rate edge cases', () => {
+      expect(() => convertInterestRate(100, 'discount', 'effective'))
+        .toThrow('Discount rate must be less than 100%');
+      
+      const highDiscount = 99.99;
+      const effectiveRate = convertInterestRate(highDiscount, 'discount', 'effective');
+      expect(effectiveRate).toBeGreaterThan(0);
+      expect(Number.isFinite(effectiveRate)).toBe(true);
+    });
+  });
+});
+
+describe('High Interest Rate Tests', () => {
+  it('handles high interest rates in present value calculations', () => {
+    const payment = 1000;
+    const interestRate = 50; // 50% annual rate
+    const periods = 5;
+    
+    const pv = presentValueAnnuityImmediate(payment, interestRate, periods);
+    // Manual calculation
+    const i = interestRate / 100;
+    const expectedPV = payment * (1 - Math.pow(1 + i, -periods)) / i;
+    
+    expect(pv).toBeCloseTo(expectedPV, 2);
+  });
+
+  it('handles high interest rates in interest rate solving', () => {
+    const payment = 1000;
+    const periods = 5;
+    const presentValue = 2500;
+    
+    const calculatedRate = calculateInterestRateFromPV(
+      presentValue,
+      payment,
+      periods
+    );
+    
+    // Verify the calculated rate produces the correct present value
+    const calculatedPV = presentValueAnnuityImmediate(
+      payment,
+      calculatedRate,
+      periods
+    );
+    
+    expect(calculatedPV).toBeCloseTo(presentValue, 0);
+  });
+
+  it('handles near-maximum interest rates', () => {
+    const payment = 1000;
+    const interestRate = 99.99; // Very high rate
+    const periods = 5;
+    
+    const pv = presentValueAnnuityImmediate(payment, interestRate, periods);
+    // Verify PV is positive and finite
+    expect(pv).toBeGreaterThan(0);
+    expect(pv).toBeLessThan(payment * periods);
+    expect(Number.isFinite(pv)).toBe(true);
+    
+    // Verify interest rate solving works with high rates
+    const calculatedRate = calculateInterestRateFromPV(pv, payment, periods);
+    expect(calculatedRate).toBeCloseTo(interestRate, 1);
+  });
 });
 
 describe('Geometric Annuity Tests', () => {
@@ -531,6 +700,57 @@ describe('Geometric Annuity Tests', () => {
       );
 
       expect(geometricPV).toBeCloseTo(levelPV, 1);
+    });
+  
+    describe('Extreme Growth Rate Tests', () => {
+      it('handles growth rate approaching interest rate', () => {
+        const pv = presentValueGeometricAnnuityImmediate(
+          basePayment,
+          4.999, // Very close to interest rate
+          5,
+          periods
+        );
+        
+        // When growth rate is very close to interest rate,
+        // PV should approach n * PMT / (1 + i)
+        const i = 5 / 100;
+        const expectedPV = basePayment * periods / (1 + i);
+        
+        expect(pv).toBeCloseTo(expectedPV, 1);
+      });
+  
+      it('handles high growth rate with high interest rate', () => {
+        const pv = presentValueGeometricAnnuityImmediate(
+          basePayment,
+          20, // High growth rate
+          25, // Higher interest rate
+          periods
+        );
+        
+        const i = 25 / 100;
+        const g = 20 / 100;
+        const expectedPV = basePayment * (1 - Math.pow((1 + g)/(1 + i), periods)) / (i - g);
+        
+        expect(pv).toBeCloseTo(expectedPV, 1);
+        expect(pv).toBeGreaterThan(0);
+        expect(Number.isFinite(pv)).toBe(true);
+      });
+  
+      it('verifies payment pattern with high growth rate', () => {
+        const highGrowthRate = 30;
+        const payments: number[] = [];
+        
+        // Generate first few payments
+        for (let t = 1; t <= 3; t++) {
+          payments.push(basePayment * Math.pow(1 + highGrowthRate/100, t-1));
+        }
+        
+        // Verify geometric progression
+        for (let i = 1; i < payments.length; i++) {
+          const ratio = payments[i] / payments[i-1];
+          expect(ratio).toBeCloseTo(1 + highGrowthRate/100, 4);
+        }
+      });
     });
   });
 

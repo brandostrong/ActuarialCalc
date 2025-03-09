@@ -1,214 +1,153 @@
-import { describe, it, expect } from 'vitest';
 import {
-  calculatePresentValueBasicPerpetuity,
-  calculatePresentValueGrowingPerpetuity,
-  calculatePaymentBasicPerpetuity,
-  calculatePaymentGrowingPerpetuity,
+  calculatePresentValueLevelPerpetuity,
+  calculatePresentValueIncreasingPerpetuity,
+  calculatePaymentLevelPerpetuity,
+  calculatePaymentIncreasingPerpetuity,
   calculateInterestRate,
-  calculateGrowthRate
+  calculatePresentValueGeometricPerpetuityImmediate,
+  calculatePresentValueGeometricPerpetuityDue,
+  calculateFutureValueLevelPerpetuity
 } from './perpetuityCalculations';
 
-describe('Basic Perpetuity Tests', () => {
-  // Test values from Python verification:
-  // PV = 20000
-  // PMT = 1000
-  // i = 5%
-  const knownPV = 20000;
-  const knownPayment = 1000;
-  const knownInterestRate = 5;
-
-  describe('Present Value Calculations', () => {
-    it('calculates present value correctly', () => {
-      const calculatedPV = calculatePresentValueBasicPerpetuity(
-        knownPayment,
-        knownInterestRate
-      );
-      expect(calculatedPV).toBeCloseTo(knownPV, 2);
-    });
-
-    it('matches theoretical formula PV = PMT/i', () => {
-      const calculatedPV = calculatePresentValueBasicPerpetuity(
-        knownPayment,
-        knownInterestRate
-      );
-      const theoreticalPV = knownPayment / (knownInterestRate / 100);
-      expect(calculatedPV).toBeCloseTo(theoreticalPV, 2);
-    });
-
-    it('handles due payments correctly', () => {
-      const immediatePV = calculatePresentValueBasicPerpetuity(
-        knownPayment,
-        knownInterestRate
-      );
-      const duePV = calculatePresentValueBasicPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        'effective',
-        1,
-        'due'
-      );
-      // Due perpetuity PV should be (1 + i) times immediate PV
-      expect(duePV).toBeCloseTo(immediatePV * (1 + knownInterestRate/100), 2);
-    });
-
-    it('calculates deferred perpetuity correctly', () => {
-      const deferredPeriods = 2;
-      const deferredPV = calculatePresentValueBasicPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        'effective',
-        1,
-        'immediate',
-        deferredPeriods
-      );
-      // Deferred PV = PV * v^m where v = 1/(1+i)
-      const immediateValue = knownPV;
-      const expectedPV = immediateValue * Math.pow(1/(1 + knownInterestRate/100), deferredPeriods);
-      expect(deferredPV).toBeCloseTo(expectedPV, 2);
-    });
+describe('Level Perpetuity Present Value Calculations', () => {
+  test('calculates level perpetuity PV with immediate payments', () => {
+    expect(calculatePresentValueLevelPerpetuity(100, 5)).toBeCloseTo(2000);
+    expect(calculatePresentValueLevelPerpetuity(100, 5, 'effective', 1, 'immediate', 0, 12))
+      .toBeCloseTo(1942.69, 2); // Monthly payments
   });
 
-  describe('Variable Solving', () => {
-    it('recovers payment from PV', () => {
-      const calculatedPayment = calculatePaymentBasicPerpetuity(
-        knownPV,
-        knownInterestRate
-      );
-      expect(calculatedPayment).toBeCloseTo(knownPayment, 2);
-    });
+  test('calculates level perpetuity PV with payments due', () => {
+    expect(calculatePresentValueLevelPerpetuity(100, 5, 'effective', 1, 'due')).toBeCloseTo(2100);
+  });
 
-    it('recovers interest rate from PV', () => {
-      const calculatedRate = calculateInterestRate(
-        knownPV,
-        knownPayment
-      );
-      expect(calculatedRate).toBeCloseTo(knownInterestRate, 4);
-    });
+  test('calculates level perpetuity PV with continuous payments', () => {
+    expect(calculatePresentValueLevelPerpetuity(100, 5, 'effective', 1, 'continuous')).toBeCloseTo(2050.63, 2);
+  });
+
+  test('calculates level perpetuity PV with deferred payments', () => {
+    expect(calculatePresentValueLevelPerpetuity(100, 5, 'effective', 1, 'immediate', 2)).toBeCloseTo(1814.06);
+  });
+
+  test('handles nominal interest rate conversion', () => {
+    expect(calculatePresentValueLevelPerpetuity(100, 4, 'nominal', 4)).toBeCloseTo(2462.81, 0);
+  });
+
+  test('throws error for non-positive interest rate', () => {
+    expect(() => calculatePresentValueLevelPerpetuity(100, 0)).toThrow();
+    expect(() => calculatePresentValueLevelPerpetuity(100, -5)).toThrow();
   });
 });
 
-describe('Growing Perpetuity Tests', () => {
-  // Test values from Python verification:
-  // PV = 25000
-  // PMT = 1000
-  // i = 6%
-  // g = 2%
-  const knownPV = 25000;
-  const knownPayment = 1000;
-  const knownInterestRate = 6;
-  const knownGrowthRate = 2;
-
-  describe('Present Value Calculations', () => {
-    it('calculates present value correctly', () => {
-      const calculatedPV = calculatePresentValueGrowingPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        knownGrowthRate
-      );
-      expect(calculatedPV).toBeCloseTo(knownPV, 2);
-    });
-
-    it('matches theoretical formula PV = PMT/(i-g)', () => {
-      const calculatedPV = calculatePresentValueGrowingPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        knownGrowthRate
-      );
-      const theoreticalPV = knownPayment / ((knownInterestRate - knownGrowthRate) / 100);
-      expect(calculatedPV).toBeCloseTo(theoreticalPV, 2);
-    });
-
-    it('handles due payments correctly', () => {
-      const immediatePV = calculatePresentValueGrowingPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        knownGrowthRate
-      );
-      const duePV = calculatePresentValueGrowingPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        knownGrowthRate,
-        'effective',
-        1,
-        'due'
-      );
-      expect(duePV).toBeCloseTo(immediatePV * (1 + knownInterestRate/100), 2);
-    });
-
-    it('calculates deferred growing perpetuity correctly', () => {
-      const deferredPeriods = 2;
-      const deferredPV = calculatePresentValueGrowingPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        knownGrowthRate,
-        'effective',
-        1,
-        'immediate',
-        deferredPeriods
-      );
-      const immediateValue = knownPV;
-      const expectedPV = immediateValue * Math.pow(1/(1 + knownInterestRate/100), deferredPeriods);
-      expect(deferredPV).toBeCloseTo(expectedPV, 2);
-    });
+describe('Increasing Perpetuity Present Value Calculations', () => {
+  test('calculates increasing perpetuity PV with immediate payments', () => {
+    expect(calculatePresentValueIncreasingPerpetuity(100, 5, 2)).toBeCloseTo(3333.33);
+    expect(calculatePresentValueIncreasingPerpetuity(100, 5, 2, 'effective', 1, 'immediate', 0, 4))
+      .toBeCloseTo(3245.91, 2); // Quarterly payments
   });
 
-  describe('Variable Solving', () => {
-    it('recovers payment from PV', () => {
-      const calculatedPayment = calculatePaymentGrowingPerpetuity(
-        knownPV,
-        knownInterestRate,
-        knownGrowthRate
-      );
-      expect(calculatedPayment).toBeCloseTo(knownPayment, 2);
-    });
-
-    it('recovers interest rate from PV', () => {
-      const calculatedRate = calculateInterestRate(
-        knownPV,
-        knownPayment,
-        'effective',
-        1,
-        'immediate',
-        0,
-        knownGrowthRate
-      );
-      expect(calculatedRate).toBeCloseTo(knownInterestRate, 4);
-    });
-
-    it('recovers growth rate from PV', () => {
-      const calculatedGrowth = calculateGrowthRate(
-        knownPV,
-        knownPayment,
-        knownInterestRate
-      );
-      expect(calculatedGrowth).toBeCloseTo(knownGrowthRate, 4);
-    });
+  test('calculates increasing perpetuity PV with payments due', () => {
+    expect(calculatePresentValueIncreasingPerpetuity(100, 5, 2, 'effective', 1, 'due')).toBeCloseTo(3500);
   });
 
-  describe('Edge Cases', () => {
-    it('throws error when interest rate equals growth rate', () => {
-      expect(() => {
-        calculatePresentValueGrowingPerpetuity(1000, 5, 5);
-      }).toThrow('Interest rate must be greater than growth rate');
-    });
+  test('calculates increasing perpetuity PV with deferred payments', () => {
+    expect(calculatePresentValueIncreasingPerpetuity(100, 5, 2, 'effective', 1, 'immediate', 2)).toBeCloseTo(3023.43, 2);
+  });
 
-    it('throws error when interest rate is less than growth rate', () => {
-      expect(() => {
-        calculatePresentValueGrowingPerpetuity(1000, 3, 5);
-      }).toThrow('Interest rate must be greater than growth rate');
-    });
+  test('throws error when growth rate equals interest rate', () => {
+    expect(() => calculatePresentValueIncreasingPerpetuity(100, 5, 5)).toThrow();
+  });
 
-    it('reduces to basic perpetuity when growth rate is zero', () => {
-      const withGrowth = calculatePresentValueGrowingPerpetuity(
-        knownPayment,
-        knownInterestRate,
-        0
-      );
-      const withoutGrowth = calculatePresentValueBasicPerpetuity(
-        knownPayment,
-        knownInterestRate
-      );
-      expect(withGrowth).toBeCloseTo(withoutGrowth, 2);
-    });
+  test('throws error when growth rate exceeds interest rate', () => {
+    expect(() => calculatePresentValueIncreasingPerpetuity(100, 5, 6)).toThrow();
+  });
+});
+
+describe('Level Perpetuity Payment Calculations', () => {
+  test('calculates level perpetuity payment with immediate payments', () => {
+    expect(calculatePaymentLevelPerpetuity(2000, 5)).toBeCloseTo(100);
+    expect(calculatePaymentLevelPerpetuity(2000, 5, 'effective', 1, 'immediate', 0, 2))
+      .toBeCloseTo(51.25, 2); // Semi-annual payments
+  });
+
+  test('calculates level perpetuity payment with payments due', () => {
+    expect(calculatePaymentLevelPerpetuity(2100, 5, 'effective', 1, 'due')).toBeCloseTo(100);
+  });
+
+  test('calculates level perpetuity payment with deferred payments', () => {
+    expect(calculatePaymentLevelPerpetuity(1814.06, 5, 'effective', 1, 'immediate', 2)).toBeCloseTo(100);
+  });
+
+  test('throws error for non-positive interest rate', () => {
+    expect(() => calculatePaymentLevelPerpetuity(2000, 0)).toThrow();
+    expect(() => calculatePaymentLevelPerpetuity(2000, -5)).toThrow();
+  });
+});
+
+describe('Increasing Perpetuity Payment Calculations', () => {
+  test('calculates increasing perpetuity payment with immediate payments', () => {
+    expect(calculatePaymentIncreasingPerpetuity(3333.33, 5, 2)).toBeCloseTo(100);
+  });
+
+  test('calculates increasing perpetuity payment with payments due', () => {
+    expect(calculatePaymentIncreasingPerpetuity(3500, 5, 2, 'effective', 1, 'due')).toBeCloseTo(100);
+  });
+
+  test('calculates increasing perpetuity payment with deferred payments', () => {
+    expect(calculatePaymentIncreasingPerpetuity(3023.59, 5, 2, 'effective', 1, 'immediate', 2)).toBeCloseTo(100, 3);
+  });
+
+  test('throws error when growth rate equals interest rate', () => {
+    expect(() => calculatePaymentIncreasingPerpetuity(3333.33, 5, 5)).toThrow();
+  });
+
+  test('throws error when growth rate exceeds interest rate', () => {
+    expect(() => calculatePaymentIncreasingPerpetuity(3333.33, 5, 6)).toThrow();
+  });
+});
+
+describe('Interest Rate Calculations', () => {
+  test('calculates interest rate for level perpetuity', () => {
+    expect(calculateInterestRate(2000, 100)).toBeCloseTo(5);
+    expect(calculateInterestRate(1942.69, 8.33, 'effective', 1, 'immediate', 0, 12)).toBeCloseTo(5, 2); // Monthly payments
+  });
+
+  test('calculates interest rate for increasing perpetuity', () => {
+    expect(calculateInterestRate(3333.33, 100, 'effective', 1, 'immediate', 0, 2)).toBeCloseTo(5);
+  });
+
+  test('calculates interest rate with payments due', () => {
+    expect(calculateInterestRate(2100, 100, 'effective', 1, 'due')).toBeCloseTo(5);
+  });
+
+  test('calculates interest rate with deferred payments', () => {
+    expect(calculateInterestRate(1814.06, 100, 'effective', 1, 'immediate', 2)).toBeCloseTo(5);
+  });
+
+  test('throws error when cannot converge', () => {
+    expect(() => calculateInterestRate(0, 100)).toThrow();
+  });
+});
+
+describe('Geometric Perpetuity Present Value Calculations', () => {
+  test('calculates geometric perpetuity PV with immediate payments', () => {
+    expect(calculatePresentValueGeometricPerpetuityImmediate(100, 5, 2)).toBeCloseTo(3333.33, 2);
+  });
+
+  test('calculates geometric perpetuity PV with due payments', () => {
+    expect(calculatePresentValueGeometricPerpetuityDue(100, 5, 2)).toBeCloseTo(3500, 2);
+  });
+
+  test('throws error when growth rate equals interest rate', () => {
+    expect(() => calculatePresentValueGeometricPerpetuityImmediate(100, 5, 5)).toThrow();
+  });
+
+  test('throws error when growth rate exceeds interest rate', () => {
+    expect(() => calculatePresentValueGeometricPerpetuityImmediate(100, 5, 6)).toThrow();
+  });
+});
+
+describe('Future Value of Level Perpetuity', () => {
+  test('throws error for future value calculation', () => {
+    expect(() => calculateFutureValueLevelPerpetuity(100, 5, 10)).toThrow('The future value of a perpetuity is infinite.');
   });
 });

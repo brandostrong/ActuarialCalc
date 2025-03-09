@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import FormulaTooltip from './FormulaTooltip';
+import PerpetuityVisualization from './PerpetuityVisualization';
 import 'katex/dist/katex.min.css';
 import { InlineMath } from 'react-katex';
 import {
@@ -9,16 +10,16 @@ import {
   PerpetuityPaymentType
 } from '../utils/types';
 import {
-  calculatePresentValueBasicPerpetuity,
-  calculatePresentValueGrowingPerpetuity,
-  calculatePaymentBasicPerpetuity,
-  calculatePaymentGrowingPerpetuity,
-  calculateGrowthRate,
-  calculateInterestRate
+  calculatePresentValueLevelPerpetuity,
+  calculatePresentValueIncreasingPerpetuity,
+  calculatePaymentLevelPerpetuity,
+  calculatePaymentIncreasingPerpetuity,
+  calculateInterestRate,
+  calculateFutureValueLevelPerpetuity
 } from '../utils/perpetuityCalculations';
 
 const initialState: PerpetuityCalculatorState = {
-  perpetuityType: 'basic',
+  perpetuityType: 'level',
   paymentType: 'immediate',
   solveFor: 'presentValue',
   payment: null,
@@ -28,6 +29,7 @@ const initialState: PerpetuityCalculatorState = {
   compoundingFrequency: 1,
   growthRate: null,
   deferredPeriods: null,
+  paymentFrequency: 1,
   result: null,
   error: null
 };
@@ -52,7 +54,8 @@ const PerpetuityCalculator: React.FC = () => {
     state.interestRateType,
     state.compoundingFrequency,
     state.growthRate,
-    state.deferredPeriods
+    state.deferredPeriods,
+    state.paymentFrequency
   ]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -92,23 +95,27 @@ const PerpetuityCalculator: React.FC = () => {
       case 'presentValue':
         if (payment === null) missingFields.push('Payment Amount');
         if (interestRate === null) missingFields.push('Interest Rate');
-        if (perpetuityType === 'growing' && growthRate === null) missingFields.push('Growth Rate');
+        if (perpetuityType === 'increasing' && growthRate === null) missingFields.push('Growth Rate');
         break;
 
       case 'payment':
         if (presentValue === null) missingFields.push('Present Value');
         if (interestRate === null) missingFields.push('Interest Rate');
-        if (perpetuityType === 'growing' && growthRate === null) missingFields.push('Growth Rate');
+        if (perpetuityType === 'increasing' && growthRate === null) missingFields.push('Growth Rate');
         break;
 case 'interestRate':
   if (payment === null) missingFields.push('Payment Amount');
   if (presentValue === null) missingFields.push('Present Value');
-  if (perpetuityType === 'growing' && growthRate === null) missingFields.push('Growth Rate');
+  if (perpetuityType === 'increasing' && growthRate === null) missingFields.push('Growth Rate');
   break;
-
 case 'growthRate':
   if (payment === null) missingFields.push('Payment Amount');
   if (presentValue === null) missingFields.push('Present Value');
+  if (interestRate === null) missingFields.push('Interest Rate');
+  break;
+
+case 'futureValue':
+  if (payment === null) missingFields.push('Payment Amount');
   if (interestRate === null) missingFields.push('Interest Rate');
   break;
 }
@@ -144,10 +151,24 @@ case 'growthRate':
       let result: number | null = null;
 
       switch (solveFor) {
+        case 'futureValue':
+          // This will throw an error since perpetuities have infinite future value
+          if (payment !== null && interestRate !== null) {
+            result = calculateFutureValueLevelPerpetuity(
+              payment,
+              interestRate,
+              100, // Any time value will throw an error
+              interestRateType,
+              compoundingFrequency,
+              state.paymentType
+            );
+          }
+          break;
+
         case 'presentValue':
           if (payment !== null && interestRate !== null) {
-            if (perpetuityType === 'basic') {
-              result = calculatePresentValueBasicPerpetuity(
+            if (perpetuityType === 'level') {
+              result = calculatePresentValueLevelPerpetuity(
                 payment,
                 interestRate,
                 interestRateType,
@@ -155,8 +176,8 @@ case 'growthRate':
                 state.paymentType,
                 state.deferredPeriods || 0
               );
-            } else if (perpetuityType === 'growing' && growthRate !== null) {
-              result = calculatePresentValueGrowingPerpetuity(
+            } else if (perpetuityType === 'increasing' && growthRate !== null) {
+              result = calculatePresentValueIncreasingPerpetuity(
                 payment,
                 interestRate,
                 growthRate,
@@ -171,8 +192,8 @@ case 'growthRate':
 
         case 'payment':
           if (presentValue !== null && interestRate !== null) {
-            if (perpetuityType === 'basic') {
-              result = calculatePaymentBasicPerpetuity(
+            if (perpetuityType === 'level') {
+              result = calculatePaymentLevelPerpetuity(
                 presentValue,
                 interestRate,
                 interestRateType,
@@ -180,8 +201,8 @@ case 'growthRate':
                 state.paymentType,
                 state.deferredPeriods || 0
               );
-            } else if (perpetuityType === 'growing' && growthRate !== null) {
-              result = calculatePaymentGrowingPerpetuity(
+            } else if (perpetuityType === 'increasing' && growthRate !== null) {
+              result = calculatePaymentIncreasingPerpetuity(
                 presentValue,
                 interestRate,
                 growthRate,
@@ -193,7 +214,7 @@ case 'growthRate':
             }
           }
           break;
-
+          
         case 'interestRate':
           if (payment !== null && presentValue !== null) {
             result = calculateInterestRate(
@@ -203,21 +224,7 @@ case 'growthRate':
               compoundingFrequency,
               state.paymentType,
               state.deferredPeriods || 0,
-              perpetuityType === 'growing' ? growthRate : null
-            );
-          }
-          break;
-
-        case 'growthRate':
-          if (payment !== null && presentValue !== null && interestRate !== null) {
-            result = calculateGrowthRate(
-              presentValue,
-              payment,
-              interestRate,
-              interestRateType,
-              compoundingFrequency,
-              state.paymentType,
-              state.deferredPeriods || 0
+              perpetuityType === 'increasing' ? growthRate : null
             );
           }
           break;
@@ -280,67 +287,116 @@ case 'growthRate':
         {/* Left column */}
         <div>
           <div className="mb-4">
-            <label className="calculator-label">Solve For</label>
-            <select
-              name="solveFor"
-              value={state.solveFor}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="presentValue">Present Value</option>
-              <option value="payment">Payment Amount</option>
-              <option value="interestRate">Interest Rate</option>
-              {state.perpetuityType === 'growing' && (
-                <option value="growthRate">Growth Rate</option>
-              )}
-            </select>
-          </div>
-
-          <div className="mb-4">
             <label className="calculator-label">Perpetuity Type</label>
-            <select
-              name="perpetuityType"
-              value={state.perpetuityType}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="basic">Basic Perpetuity</option>
-              <option value="growing">Growing Perpetuity</option>
-            </select>
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setState(prev => ({ ...prev, perpetuityType: 'level' }))}
+                  className={`w-full py-2 px-4 rounded-l border ${
+                    state.perpetuityType === 'level'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Level
+                </button>
+              </div>
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setState(prev => ({ ...prev, perpetuityType: 'increasing' }))}
+                  className={`w-full py-2 px-4 rounded-r border ${
+                    state.perpetuityType === 'increasing'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Increasing
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="mb-4">
             <label className="calculator-label">Payment Type</label>
-            <select
-              name="paymentType"
-              value={state.paymentType}
-              onChange={handleInputChange}
-              className="calculator-input"
-            >
-              <option value="immediate">End of Period (Immediate)</option>
-              <option value="due">Beginning of Period (Due)</option>
-              <option value="continuous">Continuous</option>
-            </select>
-            <div className="mt-1 text-sm text-gray-500">
-              When payments are made during each period
+            <div className="flex items-center space-x-4 mt-2">
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setState(prev => ({ ...prev, paymentType: 'immediate' }))}
+                  className={`w-full py-2 px-4 rounded-l border ${
+                    state.paymentType === 'immediate'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Immediate
+                </button>
+              </div>
+              <div className="flex-1">
+                <button
+                  type="button"
+                  onClick={() => setState(prev => ({ ...prev, paymentType: 'due' }))}
+                  className={`w-full py-2 px-4 rounded-r border ${
+                    state.paymentType === 'due'
+                      ? 'bg-primary-600 text-white border-primary-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  Due
+                </button>
+              </div>
+            </div>
+            <div className="mt-4">
+              <label htmlFor="continuousToggle" className="inline-flex items-center">
+                <input
+                  type="checkbox"
+                  id="continuousToggle"
+                  checked={state.paymentType === 'continuous'}
+                  onChange={(e) => setState(prev => ({
+                    ...prev,
+                    paymentType: e.target.checked ? 'continuous' : 'immediate'
+                  }))}
+                  className="form-checkbox h-4 w-4 text-primary-600 rounded border-gray-300"
+                />
+                <span className="ml-2 text-sm text-gray-600">Continuous Payments</span>
+              </label>
             </div>
           </div>
 
           <div className="mb-4">
-            <label className="calculator-label">Deferred Periods</label>
-            <input
-              type="number"
-              name="deferredPeriods"
-              value={state.deferredPeriods === null ? '' : state.deferredPeriods}
-              onChange={handleInputChange}
-              className="calculator-input"
-              placeholder="e.g., 5"
-              min="0"
-              step="1"
-            />
-            <div className="mt-1 text-sm text-gray-500">
-              Number of periods before payments begin (0 for immediate start)
-            </div>
+            <label htmlFor="deferredToggle" className="inline-flex items-center">
+              <input
+                type="checkbox"
+                id="deferredToggle"
+                checked={state.deferredPeriods !== null}
+                onChange={(e) => setState(prev => ({
+                  ...prev,
+                  deferredPeriods: e.target.checked ? (prev.deferredPeriods || 1) : null
+                }))}
+                className="form-checkbox h-4 w-4 text-primary-600 rounded border-gray-300"
+              />
+              <span className="ml-2 text-sm text-gray-600">Deferred Perpetuity</span>
+            </label>
+            {state.deferredPeriods !== null && (
+              <div className="mt-2">
+                <label className="calculator-label">Deferred Periods</label>
+                <input
+                  type="number"
+                  name="deferredPeriods"
+                  value={state.deferredPeriods === null ? '' : state.deferredPeriods}
+                  onChange={handleInputChange}
+                  className="calculator-input"
+                  placeholder="e.g., 5"
+                  min="1"
+                  step="1"
+                />
+                <div className="mt-1 text-sm text-gray-500">
+                  Number of periods before payments begin
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mb-4">
@@ -359,6 +415,24 @@ case 'growthRate':
               placeholder={state.solveFor === 'payment' ? 'Will be calculated' : 'e.g., 1000'}
               disabled={state.solveFor === 'payment'}
             />
+          </div>
+
+          <div className="mb-4">
+            <label className="calculator-label">Payment Frequency</label>
+            <select
+              name="paymentFrequency"
+              value={state.paymentFrequency}
+              onChange={handleInputChange}
+              className="calculator-input"
+            >
+              <option value="1">Annual (1/year)</option>
+              <option value="2">Semi-annual (2/year)</option>
+              <option value="4">Quarterly (4/year)</option>
+              <option value="12">Monthly (12/year)</option>
+            </select>
+            <div className="mt-1 text-sm text-gray-500">
+              How often payments are made per year
+            </div>
           </div>
 
         </div>
@@ -419,7 +493,7 @@ case 'growthRate':
             </div>
           </div>
 
-          {state.perpetuityType === 'growing' && (
+          {state.perpetuityType === 'increasing' && (
             <div className="mb-4">
               <label className="calculator-label">
                 Growth Rate (%)
@@ -464,14 +538,50 @@ case 'growthRate':
       </div>
 
       <div className="mt-6">
-        <button onClick={calculateResult} className="calculator-button">
+        <div className="mb-4">
+          <label className="calculator-label">Solve For</label>
+          <select
+            id="solveFor"
+            name="solveFor"
+            value={state.solveFor}
+            onChange={handleInputChange}
+            className="calculator-input"
+          >
+            <option value="payment">Payment Amount</option>
+            <option value="presentValue">Present Value</option>
+            <option value="interestRate">Interest Rate</option>
+            <option value="futureValue">Future Value</option>
+            {state.perpetuityType === 'increasing' && (
+              <option value="growthRate">Growth Rate</option>
+            )}
+          </select>
+          <p className="text-sm text-gray-600 mt-1">
+            Select what you want to calculate. The corresponding field will be calculated when you click "Calculate".
+          </p>
+        </div>
+        <button
+          onClick={calculateResult}
+          className="calculator-button"
+        >
           Calculate
         </button>
       </div>
 
       {state.result !== null && (
         <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-md">
-          <h3 className="text-lg font-medium text-gray-800 mb-2">Result</h3>
+          <h3 className="text-lg font-medium text-gray-800 mb-4">Result</h3>
+          
+          {/* Add Perpetuity Visualization */}
+          <div className="mb-6 p-4 bg-white rounded-lg shadow-sm border border-gray-100">
+            <h4 className="text-md font-medium text-gray-700 mb-3">Payment Visualization</h4>
+            <PerpetuityVisualization
+              perpetuityType={state.perpetuityType}
+              paymentType={state.paymentType}
+              payment={state.payment}
+              deferredPeriods={state.deferredPeriods}
+              growthRate={state.perpetuityType === 'increasing' ? state.growthRate : null}
+            />
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <p className="text-gray-700">
@@ -495,7 +605,7 @@ case 'growthRate':
               </p>
               <p className="text-sm font-mono bg-gray-100 p-2 rounded">
                 {/* Basic Perpetuity Formulas */}
-                {state.perpetuityType === 'basic' ? (
+                {state.perpetuityType === 'level' ? (
                   <>
                     {state.solveFor === 'presentValue' && (
                       <>

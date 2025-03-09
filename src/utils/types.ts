@@ -1,9 +1,9 @@
 // Types for the calculators
 
-export type InterestRateType = 'effective' | 'nominal' | 'force' | 'simple' | 'discount' | 'nominal-simple';
-export type PerpetuityType = 'basic' | 'growing';
+export type InterestRateType = 'effective' | 'nominal' | 'force' | 'simple' | 'discount' | 'nominal-simple' | 'coupon';
+export type PerpetuityType = 'level' | 'increasing';
 export type PerpetuityPaymentType = 'immediate' | 'due' | 'continuous';
-export type PerpetuityPartType = 'payment' | 'presentValue' | 'interestRate' | 'growthRate' | 'deferredPeriods';
+export type PerpetuityPartType = 'payment' | 'presentValue' | 'interestRate' | 'growthRate' | 'deferredPeriods' | 'futureValue';
 export type AnnuityType = 'immediate' | 'due' | 'deferred';
 export type AnnuityVariationType = 'level' | 'increasing' | 'geometric';
 export type SolveForType = 'payment' | 'presentValue' | 'futureValue' | 'interestRate' | 'periods' | 'increase';
@@ -80,11 +80,78 @@ export interface PerpetuityCalculatorState {
   compoundingFrequency: number;
   growthRate: number | null;
   deferredPeriods: number | null;
+  paymentFrequency: number;
   result: number | null;
   error: string | null;
 }
 
+export type BondType = 'regular' | 'callable';
+export type BondPriceType = 'premium' | 'discount' | 'par';
+export type BondSolveForType = 'price' | 'yield' | 'couponRate';
+
+export interface BondCalculatorState {
+  bondType: BondType;
+  faceValue: number | null;
+  couponRate: number | null;
+  redemptionValue: number | null;
+  yieldRate: number | null;
+  periods: number | null;
+  frequency: number;
+  callDates?: number[];
+  callPrices?: number[];
+  priceType: BondPriceType | null;
+  result: number | null;
+  amortizationSchedule: BondAmortizationEntry[] | null;
+  error: string | null;
+}
+
+export interface BondAmortizationEntry {
+  period: number;
+  couponPayment: number;
+  interestEarned: number;
+  amortizationAmount: number;
+  bookValue: number;
+}
+
 export interface CalculationResult {
   result: number;
-  amortizationSchedule?: AmortizationEntry[];
+  amortizationSchedule?: AmortizationEntry[] | BondAmortizationEntry[];
+}
+
+export interface CashFlow {
+  time: number;
+  amount: number;
+}
+
+export interface PortfolioComponent {
+  duration: number;
+  value: number;
+}
+
+export interface DurationConvexityResult {
+  macaulayDuration: number;
+  modifiedDuration: number;
+  macaulayConvexity: number;
+  modifiedConvexity: number;
+}
+
+export interface DurationDurations {
+  macaulayDuration: number | null;
+  modifiedDuration: number | null;
+  macaulayConvexity: number | null;
+  modifiedConvexity: number | null;
+}
+
+export type DurationSolveFor = 'price' | 'yield';
+
+export interface DurationCalculatorState {
+  solveFor: DurationSolveFor;
+  cashFlows: CashFlow[];
+  interestRate: number | null;
+  price: number | null;
+  portfolioComponents?: PortfolioComponent[];
+  timeDifference?: number;
+  result: number | null;
+  error: string | null;
+  durations: DurationDurations;
 }
