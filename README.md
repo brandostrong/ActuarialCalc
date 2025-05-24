@@ -1,5 +1,5 @@
 # ActuarialCalc
-
+# THIS WAS MOSTLY VIBE CODED AND NO LONGER SAME VERSION AS ActuarialCalc.com
 A comprehensive web application featuring financial mathematics calculators designed to help students studying for the Society of Actuaries (SOA) Exam FM.
 
 ![ActuarialCalc](https://via.placeholder.com/800x400?text=ActuarialCalc+Screenshot)
